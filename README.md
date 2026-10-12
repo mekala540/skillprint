@@ -1,5 +1,7 @@
 # skillprint
 
+[![tests](https://github.com/mekala540/skillprint/actions/workflows/tests.yml/badge.svg)](https://github.com/mekala540/skillprint/actions/workflows/tests.yml) ![license](https://img.shields.io/badge/license-MIT-blue) ![python](https://img.shields.io/badge/python-3.9%2B-blue)
+
 **See what an agent skill pack loads and runs — before you install it.**
 
 Skill packs for Claude Code, Cursor, Codex and OpenClaw now collect hundreds of thousands of stars. Stars tell you a pack is popular. They don't tell you that it adds 25,000 tokens to every session, or registers 27 hooks that run code before your agent's tool calls.
@@ -17,6 +19,8 @@ It is not a malware scanner. Snyk Agent Scan, Mondoo, Socket and VirusTotal alre
 
 ```bash
 pipx install skillprint        # or: pip install skillprint
+# before the first PyPI release:
+pip install git+https://github.com/mekala540/skillprint
 ```
 
 No dependencies. Python 3.9+.

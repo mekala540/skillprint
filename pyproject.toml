@@ -23,3 +23,7 @@ skillprint = "skillprint.cli:main"
 
 [tool.setuptools]
 packages = ["skillprint"]
+
+[project.urls]
+Homepage = "https://github.com/mekala540/skillprint"
+Issues = "https://github.com/mekala540/skillprint/issues"

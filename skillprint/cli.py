@@ -32,7 +32,7 @@ def badge(r: Report) -> str:
     biggest = max((len(v) for v in r.hooks_by_config().values()), default=0)
     msg = f"{r.footprint} footprint · {_fmt(r.upfront_tokens)} tokens · {biggest} hooks"
     url = f"https://img.shields.io/badge/skillprint-{quote(msg.replace('-', '--'))}-{COLORS[r.footprint]}"
-    return f"[![skillprint]({url})](https://github.com/skillprint/skillprint)"
+    return f"[![skillprint]({url})](https://github.com/mekala540/skillprint)"
 
 
 def text_report(r: Report, details: bool) -> str:
