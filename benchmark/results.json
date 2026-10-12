@@ -1,0 +1,408 @@
+[
+ {
+  "repo": "obra/superpowers",
+  "stars": 285429,
+  "footprint": "medium",
+  "skills": 15,
+  "upfront_tokens": 673,
+  "on_use_tokens": 39725,
+  "hooks_main_config": 1,
+  "hooks_every_action": 0,
+  "scripts": 23,
+  "findings": {
+   "destructive": 5,
+   "shell_exec": 4,
+   "env_secrets": 3,
+   "auto_install": 4
+  }
+ },
+ {
+  "repo": "affaan-m/ECC",
+  "stars": 267959,
+  "footprint": "high",
+  "skills": 314,
+  "upfront_tokens": 25637,
+  "on_use_tokens": 708238,
+  "hooks_main_config": 27,
+  "hooks_every_action": 15,
+  "scripts": 736,
+  "findings": {
+   "auto_install": 150,
+   "shell_exec": 353,
+   "env_secrets": 96,
+   "destructive": 48,
+   "secrets_access": 1
+  }
+ },
+ {
+  "repo": "mattpocock/skills",
+  "stars": 259882,
+  "footprint": "medium",
+  "skills": 38,
+  "upfront_tokens": 1505,
+  "on_use_tokens": 39829,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 7,
+  "findings": {
+   "auto_install": 1,
+   "destructive": 2
+  }
+ },
+ {
+  "repo": "multica-ai/andrej-karpathy-skills",
+  "stars": 212409,
+  "footprint": "low",
+  "skills": 1,
+  "upfront_tokens": 60,
+  "on_use_tokens": 557,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 0,
+  "findings": {}
+ },
+ {
+  "repo": "anthropics/skills",
+  "stars": 169000,
+  "footprint": "medium",
+  "skills": 20,
+  "upfront_tokens": 2448,
+  "on_use_tokens": 69255,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 77,
+  "findings": {
+   "auto_install": 2,
+   "destructive": 1,
+   "shell_exec": 39,
+   "env_secrets": 2
+  }
+ },
+ {
+  "repo": "DietrichGebert/ponytail",
+  "stars": 146497,
+  "footprint": "high",
+  "skills": 6,
+  "upfront_tokens": 424,
+  "on_use_tokens": 4713,
+  "hooks_main_config": 3,
+  "hooks_every_action": 1,
+  "scripts": 32,
+  "findings": {
+   "shell_exec": 29,
+   "env_secrets": 1
+  }
+ },
+ {
+  "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+  "stars": 130846,
+  "footprint": "medium",
+  "skills": 7,
+  "upfront_tokens": 689,
+  "on_use_tokens": 14362,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 97,
+  "findings": {
+   "shell_exec": 22,
+   "env_secrets": 13,
+   "auto_install": 17
+  }
+ },
+ {
+  "repo": "JuliusBrussee/caveman",
+  "stars": 107959,
+  "footprint": "high",
+  "skills": 22,
+  "upfront_tokens": 1085,
+  "on_use_tokens": 17131,
+  "hooks_main_config": 4,
+  "hooks_every_action": 1,
+  "scripts": 215,
+  "findings": {
+   "auto_install": 28,
+   "shell_exec": 172,
+   "secrets_access": 2,
+   "env_secrets": 31,
+   "destructive": 1
+  }
+ },
+ {
+  "repo": "addyosmani/agent-skills",
+  "stars": 99285,
+  "footprint": "medium",
+  "skills": 25,
+  "upfront_tokens": 2341,
+  "on_use_tokens": 81826,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 22,
+  "findings": {
+   "auto_install": 3,
+   "destructive": 5,
+   "shell_exec": 18
+  }
+ },
+ {
+  "repo": "thedotmack/claude-mem",
+  "stars": 94745,
+  "footprint": "high",
+  "skills": 27,
+  "upfront_tokens": 1843,
+  "on_use_tokens": 47827,
+  "hooks_main_config": 9,
+  "hooks_every_action": 4,
+  "scripts": 692,
+  "findings": {
+   "auto_install": 38,
+   "env_secrets": 24,
+   "shell_exec": 272,
+   "destructive": 61,
+   "secrets_access": 3,
+   "pipe_to_shell": 14
+  }
+ },
+ {
+  "repo": "Leonxlnx/taste-skill",
+  "stars": 90373,
+  "footprint": "medium",
+  "skills": 13,
+  "upfront_tokens": 1197,
+  "on_use_tokens": 76004,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 6,
+  "findings": {
+   "auto_install": 10
+  }
+ },
+ {
+  "repo": "ComposioHQ/awesome-claude-skills",
+  "stars": 75679,
+  "footprint": "medium",
+  "skills": 864,
+  "upfront_tokens": 29018,
+  "on_use_tokens": 703484,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 64,
+  "findings": {
+   "shell_exec": 27,
+   "auto_install": 5,
+   "env_secrets": 2,
+   "destructive": 1
+  }
+ },
+ {
+  "repo": "gsd-build/get-shit-done",
+  "stars": 64455,
+  "footprint": "medium",
+  "skills": 0,
+  "upfront_tokens": 0,
+  "on_use_tokens": 0,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 322,
+  "findings": {
+   "shell_exec": 147,
+   "env_secrets": 15,
+   "destructive": 1,
+   "auto_install": 14
+  }
+ },
+ {
+  "repo": "mvanhorn/last30days-skill",
+  "stars": 62947,
+  "footprint": "medium",
+  "skills": 1,
+  "upfront_tokens": 65,
+  "on_use_tokens": 7467,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 132,
+  "findings": {
+   "shell_exec": 61,
+   "auto_install": 29,
+   "secrets_access": 9,
+   "env_secrets": 3,
+   "destructive": 2
+  }
+ },
+ {
+  "repo": "blader/humanizer",
+  "stars": 52175,
+  "footprint": "medium",
+  "skills": 1,
+  "upfront_tokens": 89,
+  "on_use_tokens": 7970,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 1,
+  "findings": {}
+ },
+ {
+  "repo": "Imbad0202/academic-research-skills",
+  "stars": 49554,
+  "footprint": "high",
+  "skills": 5,
+  "upfront_tokens": 1202,
+  "on_use_tokens": 61143,
+  "hooks_main_config": 2,
+  "hooks_every_action": 1,
+  "scripts": 242,
+  "findings": {
+   "shell_exec": 83,
+   "auto_install": 9,
+   "env_secrets": 2,
+   "destructive": 1
+  }
+ },
+ {
+  "repo": "sickn33/agentic-awesome-skills",
+  "stars": 46955,
+  "footprint": "high",
+  "skills": 2676,
+  "upfront_tokens": 115407,
+  "on_use_tokens": 5293875,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 2890,
+  "findings": {
+   "auto_install": 1706,
+   "env_secrets": 516,
+   "shell_exec": 1021,
+   "destructive": 188,
+   "secrets_access": 129,
+   "pipe_to_shell": 36,
+   "hidden_unicode": 6
+  }
+ },
+ {
+  "repo": "cathrynlavery/diagram-design",
+  "stars": 42490,
+  "footprint": "medium",
+  "skills": 1,
+  "upfront_tokens": 210,
+  "on_use_tokens": 7359,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 87,
+  "findings": {
+   "shell_exec": 106,
+   "auto_install": 6
+  }
+ },
+ {
+  "repo": "wshobson/agents",
+  "stars": 40005,
+  "footprint": "high",
+  "skills": 184,
+  "upfront_tokens": 12939,
+  "on_use_tokens": 241341,
+  "hooks_main_config": 2,
+  "hooks_every_action": 2,
+  "scripts": 47,
+  "findings": {
+   "shell_exec": 9,
+   "auto_install": 31,
+   "destructive": 9,
+   "env_secrets": 4
+  }
+ },
+ {
+  "repo": "Yeachan-Heo/oh-my-claudecode",
+  "stars": 39364,
+  "footprint": "high",
+  "skills": 48,
+  "upfront_tokens": 2115,
+  "on_use_tokens": 143140,
+  "hooks_main_config": 30,
+  "hooks_every_action": 9,
+  "scripts": 822,
+  "findings": {
+   "destructive": 18,
+   "auto_install": 51,
+   "shell_exec": 427,
+   "env_secrets": 40
+  }
+ },
+ {
+  "repo": "anthropics/claude-plugins-official",
+  "stars": 37056,
+  "footprint": "high",
+  "skills": 29,
+  "upfront_tokens": 2896,
+  "on_use_tokens": 96893,
+  "hooks_main_config": 11,
+  "hooks_every_action": 9,
+  "scripts": 123,
+  "findings": {
+   "shell_exec": 184,
+   "env_secrets": 9,
+   "auto_install": 10,
+   "destructive": 8
+  }
+ },
+ {
+  "repo": "K-Dense-AI/scientific-agent-skills",
+  "stars": 33500,
+  "footprint": "medium",
+  "skills": 177,
+  "upfront_tokens": 17895,
+  "on_use_tokens": 578449,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 539,
+  "findings": {
+   "env_secrets": 37,
+   "auto_install": 266,
+   "shell_exec": 63
+  }
+ },
+ {
+  "repo": "OthmanAdi/planning-with-files",
+  "stars": 26200,
+  "footprint": "high",
+  "skills": 6,
+  "upfront_tokens": 884,
+  "on_use_tokens": 19025,
+  "hooks_main_config": 7,
+  "hooks_every_action": 3,
+  "scripts": 404,
+  "findings": {
+   "shell_exec": 103,
+   "destructive": 19,
+   "auto_install": 1
+  }
+ },
+ {
+  "repo": "phuryn/pm-skills",
+  "stars": 25300,
+  "footprint": "medium",
+  "skills": 69,
+  "upfront_tokens": 4888,
+  "on_use_tokens": 73193,
+  "hooks_main_config": 0,
+  "hooks_every_action": 0,
+  "scripts": 1,
+  "findings": {}
+ },
+ {
+  "repo": "alirezarezvani/claude-skills",
+  "stars": 24400,
+  "footprint": "high",
+  "skills": 446,
+  "upfront_tokens": 49715,
+  "on_use_tokens": 886485,
+  "hooks_main_config": 3,
+  "hooks_every_action": 1,
+  "scripts": 775,
+  "findings": {
+   "shell_exec": 164,
+   "auto_install": 66,
+   "env_secrets": 26,
+   "destructive": 22,
+   "secrets_access": 2
+  }
+ }
+]

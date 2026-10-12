@@ -34,23 +34,28 @@ skillprint ./my-skills --badge                      # README badge markdown
 skillprint ./my-skills --fail-on high               # exit 1 in CI if footprint is high
 ```
 
-## What the biggest packs look like (scanned 11 Oct 2026)
+## What the most-starred packs look like
 
-| Pack | Stars | Footprint | Skills | Tokens up front | Auto-run hooks (main config) | Scripts |
-| --- | --- | --- | --- | --- | --- | --- |
-| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | low | 1 | ≈60 | 0 | 0 |
-| [obra/superpowers](https://github.com/obra/superpowers) | 285k | medium | 15 | ≈670 | 1 (session start) | 23 |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | medium | 38 | ≈1,500 | 0 | 7 |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 257k | high | 314 | ≈25,600 | 27, of which 15 fire on every prompt or tool call | 736 |
+We scanned 24 of the most-starred skill repos on 12 October 2026. **Full results: [BENCHMARK.md](BENCHMARK.md).**
 
-None of these showed signs of malice. They differ by 400× in context cost and from zero to dozens of auto-run hooks — which is exactly what a star count hides.
+| Pack | Stars | Footprint | Tokens up front | Auto-run hooks (on every prompt or tool call) |
+| --- | --- | --- | --- | --- |
+| [obra/superpowers](https://github.com/obra/superpowers) | 285k | medium | ≈670 | 1 (0) |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 268k | high | ≈25,600 | 27 (15) |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | medium | ≈1,500 | 0 |
+| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | low | ≈60 | 0 |
+| [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 39k | high | ≈2,100 | 30 (9) |
+
+Up-front context cost varies 400×, and 7 of 18 packs run code on every prompt or tool call. None showed signs of malice; that's exactly what a star count hides.
 
 ## How it decides
 
 - **Skills** are found by `SKILL.md`. Copies of the same skill (per-tool folders, translations) count once; the canonical copy is preferred.
 - **Up-front tokens** = name + description of each skill, which agents load into every session so they know what's available. **On-use tokens** = the skill bodies. Both are estimated as characters ÷ 4.
-- **Hooks** are read from any JSON config with a `hooks` block (Claude Code, Cursor, Codex, Qoder formats), grouped by file, since you install one tool's config.
-- **Capability patterns** are matched only where code can run: scripts, hook commands, and fenced code blocks inside `SKILL.md`. Mentions in docs and prose are counted separately and ignored — a security guide that says "never `curl | bash`" is not a finding. Test files are skipped.
+- **Hooks** are read from hook, plugin and settings JSON files (`*hook*.json`, `plugin.json`, `settings.json`) in Claude Code, Cursor, Codex and Qoder formats, grouped by file, since you install one tool's config. Other JSON that happens to contain a `hooks` key is data, not config.
+- **Capability patterns** are matched only where code can run: scripts, hook commands, and fenced code blocks inside `SKILL.md`. Mentions in docs and prose are counted separately and ignored — a security guide that says "never `curl | bash`" is not a finding. Whole-line comments and test files are skipped.
+- **Download piped into a shell** counts only in shell contexts: shell scripts, hook commands and `SKILL.md` code blocks. In Python or JavaScript, `curl … | bash` is almost always an install hint in an error message.
+- **Hidden Unicode** (zero-width and bidi-control characters) is checked across the whole `SKILL.md`, because the agent reads every word, plus shell scripts and hook commands. Joiners between two non-Latin characters (emoji, Persian, Arabic, Indic scripts) are normal writing and are not flagged.
 - Counts describe **capability, not intent**. A `rm -rf "$TMP_DIR"` in a cleanup script is normal. Read the `--details` output before judging.
 
 ## Use it in CI

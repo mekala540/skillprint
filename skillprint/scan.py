@@ -23,6 +23,8 @@ HOOK_EVENTS_EVERY_ACTION = {
     "beforeshellexecution", "aftershellexecution", "beforemcpexecution", "aftermcpexecution",
     "beforereadfile", "afterfileedit", "beforesubmitprompt", "beforetabfileread", "aftertabfileedit",
 }
+# Only files that can register hooks; a reference JSON that happens to have a "hooks" key is data.
+HOOK_CONFIG = re.compile(r"^(.*hooks?.*|plugin|settings(\.local)?)\.json$", re.I)
 TEST_PATH = re.compile(r"(^|/)(tests?|__tests__|spec|fixtures?)(/|$)|(\.test\.|\.spec\.|_test\.py$|(^|/)test_[^/]*\.py$)")
 PLACEHOLDER_DOMAIN = re.compile(r"(^|\.)(example\.(com|org|net|test)|localhost|w3\.org|schema\.org|test|invalid)$")
 
@@ -192,8 +194,16 @@ def _rank(path: str) -> tuple:
 
 
 def _code_blocks(markdown: str) -> str:
-    """Only fenced code in a SKILL.md is something the agent may run."""
-    return "\n".join(re.findall(r"```[^\n]*\n(.*?)```", markdown, re.S))
+    """Only fenced code in a SKILL.md is something the agent may run.
+    Everything outside the fences is blanked, so line numbers still match the file."""
+    out, inside = [], False
+    for line in markdown.split("\n"):
+        if line.lstrip().startswith("```"):
+            inside = not inside
+            out.append("")
+        else:
+            out.append(line if inside else "")
+    return "\n".join(out)
 
 
 def _collect_hooks(data, source: str) -> list[Hook]:
@@ -213,8 +223,45 @@ def _collect_hooks(data, source: str) -> list[Hook]:
     return hooks
 
 
-def _scan_text(rel: str, text: str, report: Report, as_findings: bool) -> None:
+SHELL_EXT = {"sh", "bash", "zsh"}
+COMMENT_LINE = re.compile(r"^\s*(#(?!!)|//|/\*|\*|<!--|--\s)")
+
+
+def _strip_comments(text: str) -> str:
+    """Blank out whole-line comments, keeping line numbers. Comments describe; they don't run."""
+    return "\n".join("" if COMMENT_LINE.match(line) else line for line in text.split("\n"))
+
+
+def _is_shell(path: Path, text: str) -> bool:
+    first = text.split("\n", 1)[0]
+    return path.suffix.lower().lstrip(".") in SHELL_EXT or (first.startswith("#!") and "sh" in first)
+
+
+def _scan_hidden(rel: str, text: str, report: Report) -> None:
+    """Invisible characters matter where the agent or a shell reads text as instructions.
+    A joiner between two non-Latin characters is ordinary writing, not hidden text."""
+    for m in HIDDEN_UNICODE.finditer(text):
+        ch, i = m.group(), m.start()
+        if ch in "\u200c\u200d":
+            # Joiners between two non-Latin characters are ordinary writing: emoji
+            # sequences, or Persian, Arabic and Indic scripts.
+            before = text[i - 1] if i else ""
+            after = text[i + 1] if i + 1 < len(text) else ""
+            if before and after and ord(before) > 0x2FF and ord(after) > 0x2FF:
+                continue
+        line = text.count("\n", 0, i) + 1
+        report.findings.append(Finding("hidden_unicode", rel, line, f"U+{ord(ch):04X}"))
+        return
+
+
+def _scan_text(rel: str, text: str, report: Report, as_findings: bool, shell: bool = True) -> None:
+    """shell=False for code in other languages: there `curl ... | bash` is almost always a
+    message telling the user how to install something, not a command being run."""
+    if as_findings:
+        text = _strip_comments(text)
     for kind, pat in PATTERNS.items():
+        if as_findings and kind == "pipe_to_shell" and not shell:
+            continue
         for m in re.finditer(pat, text, re.I):
             if as_findings:
                 line = text.count("\n", 0, m.start()) + 1
@@ -223,10 +270,6 @@ def _scan_text(rel: str, text: str, report: Report, as_findings: bool) -> None:
             else:
                 report.doc_mentions[kind] = report.doc_mentions.get(kind, 0) + 1
     if as_findings:
-        for m in HIDDEN_UNICODE.finditer(text):
-            line = text.count("\n", 0, m.start()) + 1
-            report.findings.append(Finding("hidden_unicode", rel, line, f"U+{ord(m.group()):04X}"))
-            break
         for m in URL_RE.finditer(text):
             d = m.group(1).lower()
             if PLACEHOLDER_DOMAIN.search(d):
@@ -260,6 +303,7 @@ def scan(root: str | os.PathLike) -> Report:
             if prev is None or _rank(cand.path) < _rank(prev.path):
                 seen_skills[key] = cand
             _scan_text(rel, _code_blocks(text), report, as_findings=True)
+            _scan_hidden(rel, text, report)  # the agent reads every word of a SKILL.md
             _scan_text(rel, re.sub(r"```.*?```", "", text, flags=re.S), report, as_findings=False)
             continue
 
@@ -269,15 +313,19 @@ def scan(root: str | os.PathLike) -> Report:
 
         if _is_script(path, text):
             report.scripts.append(rel)
-            _scan_text(rel, text, report, as_findings=True)
+            shell = _is_shell(path, text)
+            _scan_text(rel, text, report, as_findings=True, shell=shell)
+            if shell:
+                _scan_hidden(rel, text, report)
             continue
 
-        if path.suffix.lower().lstrip(".") == "json" and "hooks" in text:
+        if HOOK_CONFIG.search(path.name) and "hooks" in text:
             try:
                 new = _collect_hooks(json.loads(text), rel)
                 report.hooks.extend(new)
                 for h in new:  # a hook command runs without asking, so it counts
                     _scan_text(rel, h.command, report, as_findings=True)
+                    _scan_hidden(rel, h.command, report)
             except ValueError:
                 pass
             continue
