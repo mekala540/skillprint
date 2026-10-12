@@ -19,8 +19,6 @@ It is not a malware scanner. Snyk Agent Scan, Mondoo, Socket and VirusTotal alre
 
 ```bash
 pipx install skillprint        # or: pip install skillprint
-# before the first PyPI release:
-pip install git+https://github.com/mekala540/skillprint
 ```
 
 No dependencies. Python 3.9+.
