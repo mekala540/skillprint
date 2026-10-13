@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -33,7 +34,8 @@ def _fmt(n: int) -> str:
 
 def badge(r: Report) -> str:
     biggest = max((len(v) for v in r.hooks_by_config().values()), default=0)
-    msg = f"{r.footprint} footprint · {_fmt(r.upfront_tokens)} tokens · {biggest} hooks"
+    hooks = "1 hook" if biggest == 1 else f"{biggest} hooks"
+    msg = f"{r.footprint} footprint · {_fmt(r.upfront_tokens)} tokens · {hooks}"
     url = f"https://img.shields.io/badge/skillprint-{quote(msg.replace('-', '--'))}-{COLORS[r.footprint]}"
     return f"[![skillprint]({url})](https://github.com/mekala540/skillprint)"
 
@@ -103,15 +105,26 @@ def main(argv: list[str] | None = None) -> int:
     target = a.target
     if target.startswith(("https://", "git@")):
         tmp = tempfile.mkdtemp(prefix="skillprint-")
-        res = subprocess.run(["git", "clone", "--depth", "1", "-q", target, tmp], capture_output=True, text=True)
+        # Never let git stop and ask for a username: a missing or private repo should fail fast.
+        env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+        res = subprocess.run(["git", "clone", "--depth", "1", "-q", target, tmp],
+                             capture_output=True, text=True, env=env)
         if res.returncode:
-            print(f"could not clone {target}: {res.stderr.strip()}", file=sys.stderr)
+            shutil.rmtree(tmp, ignore_errors=True)
+            print(f"skillprint: could not download {target}. Check the URL, and that the repo is public.",
+                  file=sys.stderr)
             return 2
         target = tmp
+    elif not os.path.isdir(target):
+        print(f"skillprint: {target} is not a folder. Give a skill pack folder or a git URL.", file=sys.stderr)
+        return 2
     try:
         r = scan(target)
         if tmp:
             r.root = a.target
+        if not r.skills and not r.hooks and not a.json:
+            print("skillprint: no SKILL.md files or hooks found here. Is this an agent skill pack?",
+                  file=sys.stderr)
         if a.json:
             print(json.dumps(r.to_dict(), indent=2))
         elif a.badge:
