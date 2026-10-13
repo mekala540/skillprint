@@ -2,7 +2,7 @@
 
 CLI that reports what an AI agent skill pack loads and runs before you install it:
 context tokens (up front and on use), auto-run hooks, scripts, and risky commands,
-rolled up into a `low` / `medium` / `high` footprint. It describes capability, not
+rolled up into a `light` / `moderate` / `heavy` footprint (size, not danger; never call a pack risky or dangerous). It describes capability, not
 intent. It is not a malware scanner.
 
 ## Setup and tests

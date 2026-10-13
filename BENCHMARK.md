@@ -1,37 +1,37 @@
 # 24 of the most-starred agent skill repos, scanned
 
-Scanned **12 October 2026** with skillprint 0.1.1. Star counts are approximate, taken from public rankings between 12 Sep and 12 Oct 2026 (sources in `benchmark/packs.txt`).
+Scanned **12 October 2026** with skillprint 0.1.1; footprint labels renamed in 0.1.2 (low/medium/high → light/moderate/heavy). Star counts are approximate, taken from public rankings between 12 Sep and 12 Oct 2026 (sources in `benchmark/packs.txt`).
 
 ## Headline
 
 - **Up-front context cost varies 400×.** Every installed skill puts its name and description into every session. Across the 18 packs below, that ranges from about 60 tokens (andrej-karpathy-skills) to about 25,600 (ECC). The median is about 1,200.
 - **7 of 18 packs run code on every prompt or tool call** through auto-run hooks. Only one pack is pure instructions with no scripts or hooks.
-- **No signs of malice in any pack.** "High" means a pack runs code automatically and often, not that it is dangerous. Read `skillprint <repo> --details` before judging.
+- **No signs of malice in any pack.** "Heavy" means a pack loads a lot or runs code automatically and often, not that it is dangerous. Read `skillprint <repo> --details` before judging.
 
 ## Packs you install as a unit
 
 | Pack | Stars | Footprint | Skills | Tokens up front | Auto-run hooks | …on every prompt or tool call | Scripts |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [obra/superpowers](https://github.com/obra/superpowers) | 285k | medium | 15 | ≈673 | 1 | 0 | 23 |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 268k | high | 314 | ≈25,637 | 27 | 15 | 736 |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | medium | 38 | ≈1,505 | 0 | 0 | 7 |
-| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | low | 1 | ≈60 | 0 | 0 | 0 |
-| [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) | 146k | high | 6 | ≈424 | 3 | 1 | 32 |
-| [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 131k | medium | 7 | ≈689 | 0 | 0 | 97 |
-| [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) | 108k | high | 22 | ≈1,085 | 4 | 1 | 215 |
-| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | 99k | medium | 25 | ≈2,341 | 0 | 0 | 22 |
-| [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) | 95k | high | 27 | ≈1,843 | 9 | 4 | 692 |
-| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | 90k | medium | 13 | ≈1,197 | 0 | 0 | 6 |
-| [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) | 63k | medium | 1 | ≈65 | 0 | 0 | 132 |
-| [blader/humanizer](https://github.com/blader/humanizer) | 52k | medium | 1 | ≈89 | 0 | 0 | 1 |
-| [Imbad0202/academic-research-skills](https://github.com/Imbad0202/academic-research-skills) | 50k | high | 5 | ≈1,202 | 2 | 1 | 242 |
-| [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) | 42k | medium | 1 | ≈210 | 0 | 0 | 87 |
-| [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 39k | high | 48 | ≈2,115 | 30 | 9 | 822 |
-| [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) | 34k | medium | 177 | ≈17,895 | 0 | 0 | 539 |
-| [OthmanAdi/planning-with-files](https://github.com/OthmanAdi/planning-with-files) | 26k | high | 6 | ≈884 | 7 | 3 | 404 |
-| [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | 25k | medium | 69 | ≈4,888 | 0 | 0 | 1 |
+| [obra/superpowers](https://github.com/obra/superpowers) | 285k | moderate | 15 | ≈673 | 1 | 0 | 23 |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 268k | heavy | 314 | ≈25,637 | 27 | 15 | 736 |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | moderate | 38 | ≈1,505 | 0 | 0 | 7 |
+| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | light | 1 | ≈60 | 0 | 0 | 0 |
+| [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) | 146k | heavy | 6 | ≈424 | 3 | 1 | 32 |
+| [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 131k | moderate | 7 | ≈689 | 0 | 0 | 97 |
+| [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) | 108k | heavy | 22 | ≈1,085 | 4 | 1 | 215 |
+| [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) | 99k | moderate | 25 | ≈2,341 | 0 | 0 | 22 |
+| [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) | 95k | heavy | 27 | ≈1,843 | 9 | 4 | 692 |
+| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) | 90k | moderate | 13 | ≈1,197 | 0 | 0 | 6 |
+| [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) | 63k | moderate | 1 | ≈65 | 0 | 0 | 132 |
+| [blader/humanizer](https://github.com/blader/humanizer) | 52k | moderate | 1 | ≈89 | 0 | 0 | 1 |
+| [Imbad0202/academic-research-skills](https://github.com/Imbad0202/academic-research-skills) | 50k | heavy | 5 | ≈1,202 | 2 | 1 | 242 |
+| [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) | 42k | moderate | 1 | ≈210 | 0 | 0 | 87 |
+| [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 39k | heavy | 48 | ≈2,115 | 30 | 9 | 822 |
+| [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) | 34k | moderate | 177 | ≈17,895 | 0 | 0 | 539 |
+| [OthmanAdi/planning-with-files](https://github.com/OthmanAdi/planning-with-files) | 26k | heavy | 6 | ≈884 | 7 | 3 | 404 |
+| [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | 25k | moderate | 69 | ≈4,888 | 0 | 0 | 1 |
 
-*Auto-run hooks* counts the largest hook config the pack ships (packs often ship one per tool). *High* = hooks that fire on every prompt or tool call, a download piped into a shell, or hidden characters in instructions.
+*Auto-run hooks* counts the largest hook config the pack ships (packs often ship one per tool). *Heavy* = hooks that fire on every prompt or tool call, a download piped into a shell, or hidden characters in instructions.
 
 ## Catalogs you pick from
 

@@ -111,14 +111,15 @@ class Report:
 
     @property
     def footprint(self) -> str:
-        """none < low < medium < high, from what runs without being asked."""
+        """none < light < moderate < heavy: how much it loads and runs without being asked.
+        Describes size, not danger."""
         c = self.finding_counts()
         if self.hooks_every_action or c.get("pipe_to_shell") or c.get("hidden_unicode"):
-            return "high"
+            return "heavy"
         if self.hooks or self.scripts:
-            return "medium"
+            return "moderate"
         if self.skills:
-            return "low"
+            return "light"
         return "none"
 
     def to_dict(self) -> dict:

@@ -11,7 +11,7 @@ Skill packs for Claude Code, Cursor, Codex and OpenClaw now collect hundreds of 
 - **Context cost** — tokens loaded up front every session (skill names and descriptions) and tokens loaded when skills are used
 - **Auto-run hooks** — what runs without you asking, grouped per tool config, and how many fire on every prompt or tool call
 - **What its code can do** — shell commands, destructive commands, package installs, credential and secret access, download-into-shell, hidden Unicode, network domains
-- **A footprint level** — `low` (instructions only), `medium` (ships scripts or session hooks), `high` (hooks on every action, download-into-shell, or hidden characters)
+- **A footprint level** — `light` (instructions only), `moderate` (ships scripts or session hooks), `heavy` (hooks on every action, download-into-shell, or hidden characters). It describes how much a pack does, not whether it's safe.
 
 It is not a malware scanner. Snyk Agent Scan, Mondoo, Socket and VirusTotal already do that. skillprint answers a different question: *what am I actually signing up for?*
 
@@ -31,7 +31,7 @@ skillprint https://github.com/obra/superpowers      # any git URL
 skillprint ./my-skills --details                    # every hook, finding, and the largest skills
 skillprint ./my-skills --json                       # machine-readable
 skillprint ./my-skills --badge                      # README badge markdown
-skillprint ./my-skills --fail-on high               # exit 1 in CI if footprint is high
+skillprint ./my-skills --fail-on heavy              # exit 1 in CI if footprint is heavy
 ```
 
 ## What the most-starred packs look like
@@ -40,11 +40,11 @@ We scanned 24 of the most-starred skill repos on 12 October 2026. **Full results
 
 | Pack | Stars | Footprint | Tokens up front | Auto-run hooks (on every prompt or tool call) |
 | --- | --- | --- | --- | --- |
-| [obra/superpowers](https://github.com/obra/superpowers) | 285k | medium | ≈670 | 1 (0) |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 268k | high | ≈25,600 | 27 (15) |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | medium | ≈1,500 | 0 |
-| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | low | ≈60 | 0 |
-| [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 39k | high | ≈2,100 | 30 (9) |
+| [obra/superpowers](https://github.com/obra/superpowers) | 285k | moderate | ≈670 | 1 (0) |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 268k | heavy | ≈25,600 | 27 (15) |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | moderate | ≈1,500 | 0 |
+| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | light | ≈60 | 0 |
+| [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 39k | heavy | ≈2,100 | 30 (9) |
 
 Up-front context cost varies 400×, and 7 of 18 packs run code on every prompt or tool call. None showed signs of malice; that's exactly what a star count hides.
 
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install skillprint
-      - run: skillprint . --details --fail-on high
+      - run: skillprint . --details --fail-on heavy
 ```
 
 ## Roadmap

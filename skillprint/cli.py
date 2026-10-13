@@ -21,7 +21,10 @@ LABELS = {
     "auto_install": "installs packages",
     "hidden_unicode": "hidden Unicode characters",
 }
-COLORS = {"none": "brightgreen", "low": "green", "medium": "yellow", "high": "orange"}
+COLORS = {"none": "brightgreen", "light": "green", "moderate": "blue", "heavy": "lightgrey"}
+ORDER = ["none", "light", "moderate", "heavy"]
+# Names used before 0.1.2, still accepted by --fail-on so existing CI configs keep working.
+OLD_NAMES = {"low": "light", "medium": "moderate", "high": "heavy"}
 
 
 def _fmt(n: int) -> str:
@@ -92,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--json", action="store_true", help="machine-readable output")
     p.add_argument("--badge", action="store_true", help="print a README badge")
     p.add_argument("--details", action="store_true", help="list every hook, finding and the largest skills")
-    p.add_argument("--fail-on", choices=["medium", "high"], help="exit 1 if footprint is at least this (for CI)")
+    p.add_argument("--fail-on", choices=["moderate", "heavy", "medium", "high"], help="exit 1 if footprint is at least this (for CI)")
     p.add_argument("--version", action="version", version=__version__)
     a = p.parse_args(argv)
 
@@ -115,8 +118,8 @@ def main(argv: list[str] | None = None) -> int:
             print(badge(r))
         else:
             print(text_report(r, a.details))
-        order = ["none", "low", "medium", "high"]
-        if a.fail_on and order.index(r.footprint) >= order.index(a.fail_on):
+        fail_on = OLD_NAMES.get(a.fail_on, a.fail_on)
+        if fail_on and ORDER.index(r.footprint) >= ORDER.index(fail_on):
             return 1
         return 0
     finally:

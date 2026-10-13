@@ -2,7 +2,7 @@
  {
   "repo": "obra/superpowers",
   "stars": 285429,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 15,
   "upfront_tokens": 673,
   "on_use_tokens": 39725,
@@ -19,7 +19,7 @@
  {
   "repo": "affaan-m/ECC",
   "stars": 267959,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 314,
   "upfront_tokens": 25637,
   "on_use_tokens": 708238,
@@ -37,7 +37,7 @@
  {
   "repo": "mattpocock/skills",
   "stars": 259882,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 38,
   "upfront_tokens": 1505,
   "on_use_tokens": 39829,
@@ -52,7 +52,7 @@
  {
   "repo": "multica-ai/andrej-karpathy-skills",
   "stars": 212409,
-  "footprint": "low",
+  "footprint": "light",
   "skills": 1,
   "upfront_tokens": 60,
   "on_use_tokens": 557,
@@ -64,7 +64,7 @@
  {
   "repo": "anthropics/skills",
   "stars": 169000,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 20,
   "upfront_tokens": 2448,
   "on_use_tokens": 69255,
@@ -81,7 +81,7 @@
  {
   "repo": "DietrichGebert/ponytail",
   "stars": 146497,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 6,
   "upfront_tokens": 424,
   "on_use_tokens": 4713,
@@ -96,7 +96,7 @@
  {
   "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
   "stars": 130846,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 7,
   "upfront_tokens": 689,
   "on_use_tokens": 14362,
@@ -112,7 +112,7 @@
  {
   "repo": "JuliusBrussee/caveman",
   "stars": 107959,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 22,
   "upfront_tokens": 1085,
   "on_use_tokens": 17131,
@@ -130,7 +130,7 @@
  {
   "repo": "addyosmani/agent-skills",
   "stars": 99285,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 25,
   "upfront_tokens": 2341,
   "on_use_tokens": 81826,
@@ -146,7 +146,7 @@
  {
   "repo": "thedotmack/claude-mem",
   "stars": 94745,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 27,
   "upfront_tokens": 1843,
   "on_use_tokens": 47827,
@@ -165,7 +165,7 @@
  {
   "repo": "Leonxlnx/taste-skill",
   "stars": 90373,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 13,
   "upfront_tokens": 1197,
   "on_use_tokens": 76004,
@@ -179,7 +179,7 @@
  {
   "repo": "ComposioHQ/awesome-claude-skills",
   "stars": 75679,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 864,
   "upfront_tokens": 29018,
   "on_use_tokens": 703484,
@@ -196,7 +196,7 @@
  {
   "repo": "gsd-build/get-shit-done",
   "stars": 64455,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 0,
   "upfront_tokens": 0,
   "on_use_tokens": 0,
@@ -213,7 +213,7 @@
  {
   "repo": "mvanhorn/last30days-skill",
   "stars": 62947,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 1,
   "upfront_tokens": 65,
   "on_use_tokens": 7467,
@@ -231,7 +231,7 @@
  {
   "repo": "blader/humanizer",
   "stars": 52175,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 1,
   "upfront_tokens": 89,
   "on_use_tokens": 7970,
@@ -243,7 +243,7 @@
  {
   "repo": "Imbad0202/academic-research-skills",
   "stars": 49554,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 5,
   "upfront_tokens": 1202,
   "on_use_tokens": 61143,
@@ -260,7 +260,7 @@
  {
   "repo": "sickn33/agentic-awesome-skills",
   "stars": 46955,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 2676,
   "upfront_tokens": 115407,
   "on_use_tokens": 5293875,
@@ -280,7 +280,7 @@
  {
   "repo": "cathrynlavery/diagram-design",
   "stars": 42490,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 1,
   "upfront_tokens": 210,
   "on_use_tokens": 7359,
@@ -295,7 +295,7 @@
  {
   "repo": "wshobson/agents",
   "stars": 40005,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 184,
   "upfront_tokens": 12939,
   "on_use_tokens": 241341,
@@ -312,7 +312,7 @@
  {
   "repo": "Yeachan-Heo/oh-my-claudecode",
   "stars": 39364,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 48,
   "upfront_tokens": 2115,
   "on_use_tokens": 143140,
@@ -329,7 +329,7 @@
  {
   "repo": "anthropics/claude-plugins-official",
   "stars": 37056,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 29,
   "upfront_tokens": 2896,
   "on_use_tokens": 96893,
@@ -346,7 +346,7 @@
  {
   "repo": "K-Dense-AI/scientific-agent-skills",
   "stars": 33500,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 177,
   "upfront_tokens": 17895,
   "on_use_tokens": 578449,
@@ -362,7 +362,7 @@
  {
   "repo": "OthmanAdi/planning-with-files",
   "stars": 26200,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 6,
   "upfront_tokens": 884,
   "on_use_tokens": 19025,
@@ -378,7 +378,7 @@
  {
   "repo": "phuryn/pm-skills",
   "stars": 25300,
-  "footprint": "medium",
+  "footprint": "moderate",
   "skills": 69,
   "upfront_tokens": 4888,
   "on_use_tokens": 73193,
@@ -390,7 +390,7 @@
  {
   "repo": "alirezarezvani/claude-skills",
   "stars": 24400,
-  "footprint": "high",
+  "footprint": "heavy",
   "skills": 446,
   "upfront_tokens": 49715,
   "on_use_tokens": 886485,

@@ -18,7 +18,7 @@ def test_instructions_only_pack_is_low(tmp_path):
     write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="Write tests first"))
     r = scan(tmp_path)
     assert len(r.skills) == 1
-    assert r.footprint == "low"
+    assert r.footprint == "light"
     assert r.upfront_tokens > 0 and not r.findings
 
 
@@ -43,7 +43,7 @@ def test_code_block_in_skill_is_a_finding(tmp_path):
     r = scan(tmp_path)
     kinds = {f.kind for f in r.findings}
     assert "pipe_to_shell" in kinds
-    assert r.footprint == "high"
+    assert r.footprint == "heavy"
     assert "get.realtool.dev" in r.network_domains
 
 
@@ -56,14 +56,14 @@ def test_hooks_on_every_tool_call_are_high(tmp_path):
     write(tmp_path, "hooks/hooks.json", json.dumps(hooks))
     r = scan(tmp_path)
     assert len(r.hooks) == 2 and r.hooks_every_action == 1
-    assert r.footprint == "high"
+    assert r.footprint == "heavy"
 
 
 def test_scripts_make_medium(tmp_path):
     write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="x"))
     write(tmp_path, "skills/a/run.py", "import subprocess\nsubprocess.run(['ls'])\n")
     r = scan(tmp_path)
-    assert r.footprint == "medium"
+    assert r.footprint == "moderate"
     assert r.finding_counts().get("shell_exec") == 1
 
 
@@ -86,8 +86,10 @@ def test_cli_json_and_fail_on(tmp_path, capsys):
     write(tmp_path, "skills/a/run.sh", "#!/bin/sh\nnpm install left-pad\n")
     assert main([str(tmp_path), "--json"]) == 0
     data = json.loads(capsys.readouterr().out)
-    assert data["footprint"] == "medium" and data["findings"]["auto_install"] == 1
-    assert main([str(tmp_path), "--fail-on", "medium"]) == 1
+    assert data["footprint"] == "moderate" and data["findings"]["auto_install"] == 1
+    assert main([str(tmp_path), "--fail-on", "moderate"]) == 1
+    assert main([str(tmp_path), "--fail-on", "medium"]) == 1  # pre-0.1.2 name still works
+    assert main([str(tmp_path), "--fail-on", "heavy"]) == 0
     assert main([str(tmp_path), "--badge"]) == 0
     assert "img.shields.io" in capsys.readouterr().out
 
@@ -104,7 +106,7 @@ def test_test_files_are_skipped(tmp_path):
     write(tmp_path, "tests/cleanup.sh", "rm -rf \"$TMP\"\n")
     write(tmp_path, "lib/util.test.js", "require('child_process').execSync('ls')\n")
     r = scan(tmp_path)
-    assert r.test_files == 2 and not r.findings and r.footprint == "low"
+    assert r.test_files == 2 and not r.findings and r.footprint == "light"
 
 
 def test_cursor_hooks_grouped_per_config(tmp_path):
