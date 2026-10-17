@@ -4,7 +4,7 @@
 
 **See what an agent skill pack loads and runs — before you install it.**
 
-Skill packs for Claude Code, Cursor, Codex and OpenClaw now collect hundreds of thousands of stars. Stars tell you a pack is popular. They don't tell you that it adds 25,000 tokens to every session, or registers 27 hooks that run code before your agent's tool calls.
+Skill packs for Claude Code, Cursor, Codex, GitHub Copilot, Gemini CLI, Windsurf and OpenClaw now collect hundreds of thousands of stars. Stars tell you a pack is popular. They don't tell you that it adds 25,000 tokens to every session, or registers 27 hooks that run code before your agent's tool calls.
 
 `skillprint` reads a pack and reports:
 
@@ -18,14 +18,17 @@ It is not a malware scanner. Snyk Agent Scan, Mondoo, Socket and VirusTotal alre
 ## Install
 
 ```bash
-pipx install skillprint        # or: pip install skillprint
+pipx install skillprint
 ```
+
+No pipx yet? `brew install pipx` on macOS, `sudo apt install pipx` on Debian/Ubuntu, or `python3 -m pip install --user pipx` anywhere, then `pipx ensurepath` and open a new terminal. pipx puts `skillprint` on your PATH in its own environment, so it never touches your system Python. Plain `pip install skillprint` works too.
 
 No dependencies. Python 3.9+.
 
 ## Use
 
 ```bash
+skillprint ~/.claude                                # what your Claude Code setup loads today
 skillprint ./my-skills                              # a local folder
 skillprint https://github.com/obra/superpowers      # any git URL
 skillprint ./my-skills --details                    # every hook, finding, and the largest skills
@@ -50,9 +53,10 @@ Up-front context cost varies 400×, and 7 of 18 packs run code on every prompt o
 
 ## How it decides
 
+- **`~/.claude`** is read as an install, not a pack: your own skills and `settings.json` hooks, plus the plugins listed in `plugins/installed_plugins.json` that are installed for your user and not disabled in `enabledPlugins`. The plugin marketplace catalogs (everything you *could* install), project-scoped plugins, transcripts and history are skipped.
 - **Skills** are found by `SKILL.md`. Copies of the same skill (per-tool folders, translations) count once; the canonical copy is preferred.
 - **Up-front tokens** = name + description of each skill, which agents load into every session so they know what's available. **On-use tokens** = the skill bodies. Both are estimated as characters ÷ 4.
-- **Hooks** are read from hook, plugin and settings JSON files (`*hook*.json`, `plugin.json`, `settings.json`) in Claude Code, Cursor, Codex and Qoder formats, grouped by file, since you install one tool's config. Other JSON that happens to contain a `hooks` key is data, not config.
+- **Hooks** are read from hook, plugin and settings JSON files (`*hook*.json`, `plugin.json`, `settings.json`) and from every JSON file in GitHub Copilot's `.github/hooks/` and `~/.copilot/hooks/`, in Claude Code, Cursor, Codex, Copilot, Gemini CLI, Windsurf and Qoder formats, grouped by file, since you install one tool's config. Other JSON that happens to contain a `hooks` key is data, not config.
 - **Capability patterns** are matched only where code can run: scripts, hook commands, and fenced code blocks inside `SKILL.md`. Mentions in docs and prose are counted separately and ignored — a security guide that says "never `curl | bash`" is not a finding. Whole-line comments and test files are skipped.
 - **Download piped into a shell** counts only in shell contexts: shell scripts, hook commands and `SKILL.md` code blocks. In Python or JavaScript, `curl … | bash` is almost always an install hint in an error message.
 - **Hidden Unicode** (zero-width and bidi-control characters) is checked across the whole `SKILL.md`, because the agent reads every word, plus shell scripts and hook commands. Joiners between two non-Latin characters (emoji, Persian, Arabic, Indic scripts) are normal writing and are not flagged.

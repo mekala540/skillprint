@@ -17,14 +17,25 @@ SCRIPT_EXT = {"sh", "bash", "zsh", "py", "js", "mjs", "cjs", "ts", "ps1", "cmd",
 CONFIG_EXT = {"json", "yaml", "yml", "toml"}
 MAX_BYTES = 1_000_000
 
-# Hook events that fire on every prompt or tool call (Claude Code, Cursor, Codex naming).
+# Hook events that fire on every prompt or tool call, matched lowercased.
 HOOK_EVENTS_EVERY_ACTION = {
+    # Claude Code, Codex; Copilot uses the same names in camelCase
     "pretooluse", "posttooluse", "posttoolusefailure", "userpromptsubmit",
+    # Cursor
     "beforeshellexecution", "aftershellexecution", "beforemcpexecution", "aftermcpexecution",
     "beforereadfile", "afterfileedit", "beforesubmitprompt", "beforetabfileread", "aftertabfileedit",
+    # GitHub Copilot
+    "userpromptsubmitted", "userprompttransformed",
+    # Gemini CLI (model events fire on every model call, more often than prompts)
+    "beforetool", "aftertool", "beforeagent", "beforemodel", "aftermodel", "beforetoolselection",
+    # Windsurf
+    "pre_read_code", "post_read_code", "pre_write_code", "post_write_code", "pre_run_command",
+    "post_run_command", "pre_mcp_tool_use", "post_mcp_tool_use", "pre_user_prompt",
 }
 # Only files that can register hooks; a reference JSON that happens to have a "hooks" key is data.
 HOOK_CONFIG = re.compile(r"^(.*hooks?.*|plugin|settings(\.local)?)\.json$", re.I)
+# GitHub Copilot loads every JSON file in .github/hooks/ and ~/.copilot/hooks/, whatever its name.
+COPILOT_HOOK_DIR = re.compile(r"(^|/)\.(github|copilot)/hooks/[^/]+\.json$")
 TEST_PATH = re.compile(r"(^|/)(tests?|__tests__|spec|fixtures?)(/|$)|(\.test\.|\.spec\.|_test\.py$|(^|/)test_[^/]*\.py$)")
 PLACEHOLDER_DOMAIN = re.compile(r"(^|\.)(example\.(com|org|net|test)|localhost|w3\.org|schema\.org|test|invalid)$")
 
@@ -148,11 +159,59 @@ class Report:
 
 # ---- helpers -------------------------------------------------------------
 
-def _iter_files(root: Path):
+def _iter_files(root: Path, skip: set[str] = frozenset()):
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not (dirpath == str(root) and d in skip)]
         for name in filenames:
             yield Path(dirpath) / name
+
+
+def is_claude_home(root: Path) -> bool:
+    return root.name == ".claude" and any((root / p).exists() for p in ("settings.json", "plugins", "projects"))
+
+
+def _installed_plugins(root: Path) -> list[Path]:
+    """Plugin folders Claude Code actually loads. plugins/marketplaces holds the catalog of
+    everything you could install; only plugins/installed_plugins.json says what you did."""
+    try:
+        settings = json.loads((root / "settings.json").read_text(encoding="utf-8"))
+        enabled = settings.get("enabledPlugins") or {}
+    except (OSError, ValueError, AttributeError):
+        enabled = {}
+    try:
+        data = json.loads((root / "plugins" / "installed_plugins.json").read_text(encoding="utf-8"))
+        plugins = data.get("plugins", {})
+    except (OSError, ValueError, AttributeError):
+        cache = root / "plugins" / "cache"
+        return [cache] if cache.is_dir() else []
+    out: list[Path] = []
+    for key, entries in plugins.items() if isinstance(plugins, dict) else []:
+        if isinstance(enabled, dict) and enabled.get(key) is False:
+            continue
+        for e in entries if isinstance(entries, list) else [entries]:
+            if not isinstance(e, dict) or e.get("scope", "user") != "user":
+                continue  # project and local installs only load inside that project
+            p = Path(os.path.expanduser(str(e.get("installPath", ""))))
+            if e.get("installPath") and p.is_dir():
+                out.append(p)
+    return out
+
+
+# A Claude Code home also holds transcripts, history and caches; none of it loads into the agent.
+CLAUDE_HOME_SKIP = {
+    "plugins", "projects", "file-history", "sessions", "session-env", "shell-snapshots", "backups",
+    "downloads", "cache", "todos", "statsig", "ide", "debug", "telemetry", "paste-cache", "logs",
+}
+
+
+def _pack_files(root: Path):
+    """Every file in the pack. For ~/.claude: your own skills and settings, plus installed plugins."""
+    if not is_claude_home(root):
+        yield from _iter_files(root)
+        return
+    yield from _iter_files(root, skip=CLAUDE_HOME_SKIP)
+    for plugin in _installed_plugins(root):
+        yield from _iter_files(plugin)
 
 
 def _read_text(path: Path) -> str | None:
@@ -207,6 +266,18 @@ def _code_blocks(markdown: str) -> str:
     return "\n".join(out)
 
 
+def _hook_command(c: dict) -> str:
+    """Claude Code, Cursor, Gemini and Windsurf use "command"; Copilot uses "bash" and
+    "powershell" (or "exec" with "args"), and its http hooks call a "url"."""
+    for k in ("command", "bash", "powershell"):
+        if c.get(k):
+            return str(c[k])
+    if c.get("exec"):
+        args = c.get("args") if isinstance(c.get("args"), list) else []
+        return " ".join(str(x) for x in [c["exec"], *args])
+    return str(c.get("url", ""))
+
+
 def _collect_hooks(data, source: str) -> list[Hook]:
     hooks: list[Hook] = []
     block = data.get("hooks") if isinstance(data, dict) else None
@@ -219,7 +290,7 @@ def _collect_hooks(data, source: str) -> list[Hook]:
             inner = entry.get("hooks") if isinstance(entry, dict) else None
             cmds = inner if isinstance(inner, list) else [entry]
             for c in cmds:
-                cmd = c.get("command", "") if isinstance(c, dict) else str(c)
+                cmd = _hook_command(c) if isinstance(c, dict) else str(c)
                 hooks.append(Hook(event=event, command=str(cmd)[:200], source=source))
     return hooks
 
@@ -285,8 +356,8 @@ def scan(root: str | os.PathLike) -> Report:
     report = Report(root=str(root))
     seen_skills: dict[str, Skill] = {}
 
-    for path in _iter_files(root):
-        rel = str(path.relative_to(root))
+    for path in _pack_files(root):
+        rel = os.path.relpath(path, root)
         text = _read_text(path)
         report.files += 1
         if text is None:
@@ -320,7 +391,8 @@ def scan(root: str | os.PathLike) -> Report:
                 _scan_hidden(rel, text, report)
             continue
 
-        if HOOK_CONFIG.search(path.name) and "hooks" in text:
+        if (HOOK_CONFIG.search(path.name) or COPILOT_HOOK_DIR.search(rel.replace(os.sep, "/"))) \
+                and "hooks" in text:
             try:
                 new = _collect_hooks(json.loads(text), rel)
                 report.hooks.extend(new)

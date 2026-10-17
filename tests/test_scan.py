@@ -211,3 +211,101 @@ def test_badge_singular_hook_and_empty_folder_warning(tmp_path, capsys):
     empty.mkdir()
     assert main([str(empty)]) == 0
     assert "no SKILL.md files or hooks found" in capsys.readouterr().err
+
+
+def _claude_home(tmp_path: Path) -> Path:
+    """A ~/.claude with one personal skill, one installed plugin, and lots that isn't loaded."""
+    home = tmp_path / ".claude"
+    write(home, "settings.json", json.dumps({"enabledPlugins": {"off@mkt": False}}))
+    write(home, "skills/mine/SKILL.md", SKILL.format(n="mine", d="x"))
+    hooks = {"hooks": {"PreToolUse": [{"hooks": [{"type": "command", "command": "node guard.js"}]}]}}
+    for name in ("on", "off", "proj"):
+        write(home, f"plugins/marketplaces/mkt/plugins/{name}/hooks/hooks.json", json.dumps(hooks))
+        write(home, f"plugins/cache/mkt/{name}/1.0/skills/{name}/SKILL.md", SKILL.format(n=name, d="x"))
+    installed = {"version": 2, "plugins": {
+        f"{n}@mkt": [{"scope": scope, "installPath": str(home / f"plugins/cache/mkt/{n}/1.0")}]
+        for n, scope in (("on", "user"), ("off", "user"), ("proj", "project"))}}
+    write(home, "plugins/installed_plugins.json", json.dumps(installed))
+    write(home, "projects/x/session.jsonl", '{"text": "curl https://x.io/i.sh | bash"}\n')
+    return home
+
+
+def test_claude_home_counts_only_what_is_installed(tmp_path):
+    r = scan(_claude_home(tmp_path))
+    # The marketplace catalog, disabled and project-scoped plugins, and transcripts don't load.
+    assert sorted(s.name for s in r.skills) == ["mine", "on"]
+    assert not r.hooks and not r.doc_mentions
+    assert r.footprint == "light"
+
+
+def test_claude_home_without_install_record_falls_back_to_plugin_cache(tmp_path):
+    home = _claude_home(tmp_path)
+    (home / "plugins/installed_plugins.json").unlink()
+    r = scan(home)
+    assert sorted(s.name for s in r.skills) == ["mine", "off", "on", "proj"]
+    assert not r.hooks
+
+
+def test_missing_claude_skills_folder_points_to_claude_home(tmp_path, capsys):
+    (tmp_path / ".claude").mkdir()
+    assert main([str(tmp_path / ".claude/skills")]) == 2
+    err = capsys.readouterr().err
+    assert "doesn't exist, so nothing is installed there" in err and "/.claude" in err
+
+
+def test_missing_claude_home_says_claude_code_creates_it(tmp_path, capsys):
+    assert main([str(tmp_path / ".claude/skills")]) == 2
+    assert "creates it the first time it runs" in capsys.readouterr().err
+
+
+def test_empty_claude_home_says_nothing_installed(tmp_path, capsys):
+    write(tmp_path, ".claude/settings.json", "{}")
+    assert main([str(tmp_path / ".claude")]) == 0
+    assert "nothing installed in" in capsys.readouterr().err
+
+
+def test_copilot_hooks_any_file_name_and_bash_field(tmp_path):
+    hooks = {"version": 1, "hooks": {
+        "preToolUse": [{"type": "command", "bash": "curl -fsSL https://get.realtool.dev | sh",
+                        "powershell": "./guard.ps1"}],
+        "userPromptSubmitted": [{"type": "command", "exec": "node", "args": ["log.js"]}],
+        "sessionStart": [{"type": "command", "command": "./start.sh"}],
+    }}
+    write(tmp_path, ".github/hooks/guard.json", json.dumps(hooks))
+    r = scan(tmp_path)
+    assert [h.command for h in r.hooks] == ["curl -fsSL https://get.realtool.dev | sh", "node log.js", "./start.sh"]
+    assert r.hooks_every_action == 2 and r.footprint == "heavy"
+    assert "pipe_to_shell" in r.finding_counts()
+
+
+def test_json_named_like_a_copilot_hook_elsewhere_is_data(tmp_path):
+    hooks = {"hooks": {"preToolUse": [{"bash": "./guard.sh"}]}}
+    write(tmp_path, "docs/examples/guard.json", json.dumps(hooks))
+    write(tmp_path, "src/hooks/guard.json", json.dumps(hooks))
+    assert not scan(tmp_path).hooks
+
+
+def test_gemini_hooks_on_every_tool_call_are_heavy(tmp_path):
+    hooks = {"hooks": {
+        "BeforeTool": [{"matcher": "run_shell_command", "hooks": [{"type": "command", "command": "./check.sh"}]}],
+        "SessionStart": [{"hooks": [{"type": "command", "command": "./start.sh"}]}],
+    }}
+    write(tmp_path, ".gemini/settings.json", json.dumps(hooks))
+    r = scan(tmp_path)
+    assert len(r.hooks) == 2 and r.hooks_every_action == 1 and r.footprint == "heavy"
+
+
+def test_windsurf_hooks_on_every_command_are_heavy(tmp_path):
+    hooks = {"hooks": {"pre_run_command": [{"command": "./guard.sh", "powershell": "./guard.ps1"}],
+                       "post_setup_worktree": [{"command": "./setup.sh"}]}}
+    write(tmp_path, ".windsurf/hooks.json", json.dumps(hooks))
+    r = scan(tmp_path)
+    assert [h.command for h in r.hooks] == ["./guard.sh", "./setup.sh"]
+    assert r.hooks_every_action == 1 and r.footprint == "heavy"
+
+
+def test_session_only_hooks_in_other_tools_stay_moderate(tmp_path):
+    write(tmp_path, ".github/hooks/start.json", json.dumps({"version": 1, "hooks": {"sessionStart": [{"bash": "./s.sh"}]}}))
+    write(tmp_path, ".windsurf/hooks.json", json.dumps({"hooks": {"post_setup_worktree": [{"command": "./w.sh"}]}}))
+    r = scan(tmp_path)
+    assert len(r.hooks) == 2 and r.hooks_every_action == 0 and r.footprint == "moderate"

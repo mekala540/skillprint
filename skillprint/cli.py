@@ -11,7 +11,9 @@ import tempfile
 from urllib.parse import quote
 
 from . import __version__
-from .scan import scan, Report, HOOK_EVENTS_EVERY_ACTION
+from pathlib import Path
+
+from .scan import scan, is_claude_home, Report, HOOK_EVENTS_EVERY_ACTION
 
 LABELS = {
     "shell_exec": "runs shell commands",
@@ -30,6 +32,28 @@ OLD_NAMES = {"low": "light", "medium": "moderate", "high": "heavy"}
 
 def _fmt(n: int) -> str:
     return f"{n:,}"
+
+
+TRY_URL = "To check a pack before you install it: skillprint https://github.com/OWNER/REPO"
+
+
+def _tilde(path: str) -> str:
+    home = os.path.expanduser("~")
+    return "~" + path[len(home):] if path == home or path.startswith(home + os.sep) else path
+
+
+def missing_message(target: str) -> str:
+    """Point people at what to run instead. The most common miss is ~/.claude/skills, which
+    Claude Code only creates once you add a personal skill."""
+    p = Path(os.path.abspath(os.path.expanduser(target)))
+    home = next((a for a in [p, *p.parents] if a.name == ".claude"), None)
+    if home is not None and not home.is_dir():
+        return (f"{_tilde(str(home))} doesn't exist: Claude Code creates it the first time it runs.\n"
+                f"{TRY_URL}")
+    if home is not None:
+        return (f"{_tilde(str(p))} doesn't exist, so nothing is installed there.\n"
+                f"To see everything Claude Code loads (your skills, plugins and hooks): skillprint {_tilde(str(home))}")
+    return f"{target} is not a folder. Give a skill pack folder or a git URL."
 
 
 def badge(r: Report) -> str:
@@ -116,15 +140,19 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         target = tmp
     elif not os.path.isdir(target):
-        print(f"skillprint: {target} is not a folder. Give a skill pack folder or a git URL.", file=sys.stderr)
+        print(f"skillprint: {missing_message(target)}", file=sys.stderr)
         return 2
     try:
         r = scan(target)
         if tmp:
             r.root = a.target
         if not r.skills and not r.hooks and not a.json:
-            print("skillprint: no SKILL.md files or hooks found here. Is this an agent skill pack?",
-                  file=sys.stderr)
+            if is_claude_home(Path(target).resolve()):
+                print(f"skillprint: nothing installed in {_tilde(r.root)} yet: no skills, plugins or hooks.\n"
+                      f"{TRY_URL}", file=sys.stderr)
+            else:
+                print("skillprint: no SKILL.md files or hooks found here. Is this an agent skill pack?",
+                      file=sys.stderr)
         if a.json:
             print(json.dumps(r.to_dict(), indent=2))
         elif a.badge:
