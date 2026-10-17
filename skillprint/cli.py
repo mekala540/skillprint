@@ -1,4 +1,5 @@
-"""Command line: skillprint <path-or-git-url> [--json] [--badge] [--details]"""
+"""Command line: skillprint <path-or-git-url> [--json] [--badge] [--details]
+              skillprint diff <old> <new> [--json] [--fail-on LEVEL]"""
 from __future__ import annotations
 
 import argparse
@@ -13,6 +14,7 @@ from urllib.parse import quote
 from . import __version__
 from pathlib import Path
 
+from .diff import Diff, diff
 from .scan import scan, is_claude_home, Report, HOOK_EVENTS_EVERY_ACTION
 from .insights import analyse, redactor, Insights
 from . import html as html_report
@@ -138,8 +140,109 @@ def text_report(r: Report, details: bool, ins: Insights | None = None, hide=lamb
     return "\n".join(out)
 
 
+class TargetError(Exception):
+    pass
+
+
+def _load(target: str) -> Report:
+    """Scan a folder or a git URL. Raises TargetError with a message for the user."""
+    if target.startswith(("https://", "git@")):
+        tmp = tempfile.mkdtemp(prefix="skillprint-")
+        try:
+            # Never let git stop and ask for a username: a missing or private repo should fail fast.
+            env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+            res = subprocess.run(["git", "clone", "--depth", "1", "-q", target, tmp],
+                                 capture_output=True, text=True, env=env)
+            if res.returncode:
+                raise TargetError(f"could not download {target}. Check the URL, and that the repo is public.")
+            r = scan(tmp)
+            r.root = target
+            return r
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    if not os.path.isdir(target):
+        raise TargetError(missing_message(target))
+    return scan(target)
+
+
+def _signed(n: int) -> str:
+    return f"+{_fmt(n)}" if n > 0 else ("±0" if n == 0 else f"-{_fmt(-n)}")
+
+
+def diff_report(d: Diff) -> str:
+    o, n = d.old, d.new
+    out = [f"skillprint {__version__} · diff", f"  old: {o.root}", f"  new: {n.root}", ""]
+
+    def row(label: str, a: int, b: int, unit: str = "") -> None:
+        approx = "≈" if unit else ""
+        change = f"  ({_signed(b - a)})" if a != b else ""
+        out.append(f"  {label:<21}{approx}{_fmt(a)} → {approx}{_fmt(b)}{unit}{change}")
+
+    arrow = "unchanged" if o.footprint == n.footprint else f"→ {n.footprint.upper()}"
+    out.append(f"  {'Footprint':<21}{o.footprint.upper()} {arrow}")
+    row("Skills", len(o.skills), len(n.skills))
+    row("Loaded up front", o.upfront_tokens, n.upfront_tokens, " tokens")
+    row("Loaded when used", o.on_use_tokens, n.on_use_tokens, " tokens")
+    row("Scripts", len(o.scripts), len(n.scripts))
+    row("Auto-run hooks", len(o.hooks), len(n.hooks))
+    row("  on every action", o.hooks_every_action, n.hooks_every_action)
+
+    if not d.changed:
+        out += ["", "  No changes in skills, scripts, hooks or flagged code."]
+        return "\n".join(out)
+
+    for sign, title, skills, scripts, hooks, findings, domains in (
+        ("+", "Added", d.skills_added, d.scripts_added, d.hooks_added, d.findings_added, d.domains_added),
+        ("-", "Removed", d.skills_removed, d.scripts_removed, d.hooks_removed, d.findings_removed,
+         d.domains_removed),
+    ):
+        lines = [f"    {sign} skill    {s.name}  (≈{_fmt(s.description_tokens)} up front / "
+                 f"≈{_fmt(s.body_tokens)} when used)" for s in skills]
+        lines += [f"    {sign} script   {p}" for p in scripts]
+        lines += [f"    {sign} hook     {h.event:<18} {h.command[:80]}   ({h.source})" for h in hooks]
+        lines += [f"    {sign} {LABELS.get(f.kind, f.kind)}  {f.path}:{f.line}  {f.excerpt[:100]}" for f in findings]
+        lines += [f"    {sign} domain   {x}" for x in domains]
+        if lines:
+            out += ["", f"  {title}:"] + lines
+    if d.skills_changed:
+        out += ["", "  Changed skills (tokens up front / when used):"]
+        for c in d.skills_changed:
+            out.append(f"    ~ {c.name}  {_fmt(c.old.description_tokens)} → {_fmt(c.new.description_tokens)}"
+                       f" / {_fmt(c.old.body_tokens)} → {_fmt(c.new.body_tokens)}")
+    out += ["", "  Counts describe capability, not intent. Token figures are estimates (chars / 4)."]
+    return "\n".join(out)
+
+
+def _fails(footprint: str, fail_on: str | None) -> bool:
+    fail_on = OLD_NAMES.get(fail_on, fail_on)
+    return bool(fail_on) and ORDER.index(footprint) >= ORDER.index(fail_on)
+
+
+def diff_main(argv: list[str]) -> int:
+    p = argparse.ArgumentParser(prog="skillprint diff",
+                                description="Show what changed between two versions of a skill pack.")
+    p.add_argument("old", help="the old version: a folder or a git URL")
+    p.add_argument("new", help="the new version: a folder or a git URL")
+    p.add_argument("--json", action="store_true", help="machine-readable output")
+    p.add_argument("--fail-on", choices=["moderate", "heavy", "medium", "high"],
+                   help="exit 1 if the new version's footprint is at least this (for CI)")
+    a = p.parse_args(argv)
+    try:
+        d = diff(_load(a.old), _load(a.new))
+    except TargetError as e:
+        print(f"skillprint: {e}", file=sys.stderr)
+        return 2
+    print(json.dumps(d.to_dict(), indent=2) if a.json else diff_report(d))
+    return 1 if _fails(d.new.footprint, a.fail_on) else 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="skillprint", description="Measure what an agent skill pack loads and runs.")
+    argv = sys.argv[1:] if argv is None else argv
+    # "skillprint diff OLD NEW". A pack folder that happens to be called "diff" still scans alone.
+    if argv[:1] == ["diff"] and len([x for x in argv[1:] if not x.startswith("-")]) >= 2:
+        return diff_main(argv[1:])
+    p = argparse.ArgumentParser(prog="skillprint", description="Measure what an agent skill pack loads and runs.",
+                                epilog="To compare two versions of a pack: skillprint diff OLD NEW")
     p.add_argument("target", help="path to a skill pack, or a git URL")
     p.add_argument("--json", action="store_true", help="machine-readable output")
     p.add_argument("--badge", action="store_true", help="print a README badge")
@@ -155,57 +258,36 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--version", action="version", version=__version__)
     a = p.parse_args(argv)
 
-    tmp = None
-    target = a.target
-    if target.startswith(("https://", "git@")):
-        tmp = tempfile.mkdtemp(prefix="skillprint-")
-        # Never let git stop and ask for a username: a missing or private repo should fail fast.
-        env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
-        res = subprocess.run(["git", "clone", "--depth", "1", "-q", target, tmp],
-                             capture_output=True, text=True, env=env)
-        if res.returncode:
-            shutil.rmtree(tmp, ignore_errors=True)
-            print(f"skillprint: could not download {target}. Check the URL, and that the repo is public.",
-                  file=sys.stderr)
-            return 2
-        target = tmp
-    elif not os.path.isdir(target):
-        print(f"skillprint: {missing_message(target)}", file=sys.stderr)
-        return 2
     try:
-        r = scan(target)
-        if tmp:
-            r.root = a.target
-        if not r.skills and not r.hooks and not a.json:
-            if is_claude_home(Path(target).resolve()):
-                print(f"skillprint: nothing installed in {_tilde(r.root)} yet: no skills, plugins or hooks.\n"
-                      f"{TRY_URL}", file=sys.stderr)
-            else:
-                print("skillprint: no SKILL.md files or hooks found here. Is this an agent skill pack?",
-                      file=sys.stderr)
-        ins = analyse(r, a.context_window, a.internal_domain)
-        hide = redactor(a.internal_domain, r.root) if a.redact else (lambda t: t)
-        if a.json:
-            d = r.to_dict()
-            d["listing"] = ins.listing.__dict__
-            d["headline"], d["actions"] = ins.headline, ins.actions
-            d["external_domains"] = ins.external_domains
-            text = json.dumps(d, indent=2)
-            print(hide(text) if a.redact else text)
-        elif a.badge:
-            print(badge(r))
+        r = _load(a.target)
+    except TargetError as e:
+        print(f"skillprint: {e}", file=sys.stderr)
+        return 2
+    if not r.skills and not r.hooks and not a.json:
+        local = not a.target.startswith(("https://", "git@"))
+        if local and is_claude_home(Path(a.target).resolve()):
+            print(f"skillprint: nothing installed in {_tilde(r.root)} yet: no skills, plugins or hooks.\n"
+                  f"{TRY_URL}", file=sys.stderr)
         else:
-            print(text_report(r, a.details, ins, hide))
-        if a.html:
-            Path(a.html).write_text(html_report.render(r, ins, __version__, hide, _tilde(r.root)), encoding="utf-8")
-            print(f"\nReport written to {os.path.abspath(a.html)}", file=sys.stderr)
-        fail_on = OLD_NAMES.get(a.fail_on, a.fail_on)
-        if fail_on and ORDER.index(r.footprint) >= ORDER.index(fail_on):
-            return 1
-        return 0
-    finally:
-        if tmp:
-            shutil.rmtree(tmp, ignore_errors=True)
+            print("skillprint: no SKILL.md files or hooks found here. Is this an agent skill pack?",
+                  file=sys.stderr)
+    ins = analyse(r, a.context_window, a.internal_domain)
+    hide = redactor(a.internal_domain, r.root) if a.redact else (lambda t: t)
+    if a.json:
+        d = r.to_dict()
+        d["listing"] = ins.listing.__dict__
+        d["headline"], d["actions"] = ins.headline, ins.actions
+        d["external_domains"] = ins.external_domains
+        text = json.dumps(d, indent=2)
+        print(hide(text) if a.redact else text)
+    elif a.badge:
+        print(badge(r))
+    else:
+        print(text_report(r, a.details, ins, hide))
+    if a.html:
+        Path(a.html).write_text(html_report.render(r, ins, __version__, hide, _tilde(r.root)), encoding="utf-8")
+        print(f"\nReport written to {os.path.abspath(a.html)}", file=sys.stderr)
+    return 1 if _fails(r.footprint, a.fail_on) else 0
 
 
 if __name__ == "__main__":

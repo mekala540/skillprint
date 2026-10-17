@@ -37,7 +37,10 @@ skillprint ./my-skills --badge                      # README badge markdown
 skillprint ./my-skills --fail-on heavy              # exit 1 in CI if footprint is heavy
 skillprint ~/.claude --html report.html             # one-page report to share (no network, safe to email)
 skillprint ~/.claude --html r.html --internal-domain yourcompany.com --redact   # flag outside domains, hide internal names
+skillprint diff ./skills-v1 ./skills-v2             # what changed between two versions
 ```
+
+`skillprint diff OLD NEW` takes two folders or git URLs and lists skills, scripts, hooks, flagged code and network domains that were added or removed, plus skills whose size changed. `--json` and `--fail-on` work the same way (`--fail-on` checks the new version).
 
 ## What the most-starred packs look like
 
@@ -62,6 +65,7 @@ Claude Code gives the whole skill list a small budget (about 1% of the context w
 - **Capability patterns** are matched only where code can run: scripts, hook commands, and fenced code blocks inside `SKILL.md`. Mentions in docs and prose are counted separately and ignored — a security guide that says "never `curl | bash`" is not a finding. Whole-line comments and test files are skipped.
 - **Download piped into a shell** counts only in shell contexts: shell scripts, hook commands and `SKILL.md` code blocks. In Python or JavaScript, `curl … | bash` is almost always an install hint in an error message.
 - **Hidden Unicode** (zero-width and bidi-control characters) is checked across the whole `SKILL.md`, because the agent reads every word, plus shell scripts and hook commands. Joiners between two non-Latin characters (emoji, Persian, Arabic, Indic scripts) are normal writing and are not flagged.
+- **Diff mode** matches skills by name, hooks by config file, event and command, and flagged code by file and line text, so a finding that only moved to a different line is not reported as new.
 - Counts describe **capability, not intent**. A `rm -rf "$TMP_DIR"` in a cleanup script is normal. Read the `--details` output before judging.
 - **What the agent really sees.** Claude Code loads skills from `<skills folder>/<skill-name>/SKILL.md`, one level deep. A `SKILL.md` deeper than that, such as inside a whole repo copied into `~/.claude/skills`, is never loaded, so it's reported separately; its scripts, hooks and flagged lines are set aside too, because they never run. Scanning a GitHub repo treats every skill in it as installed.
 - **The skill listing.** Claude Code lists every skill's name each turn and drops descriptions once the listing passes about 1% of the model's context window (≈2,000 tokens for a 200k model; use `--context-window 1000000` for 1M models). Each description is capped at 1,536 characters. Which skills keep their description depends on usage, which isn't visible on disk, so the split is an estimate.
@@ -88,7 +92,7 @@ jobs:
 
 - [x] Footprint: context cost, hooks, capabilities, badge, CI mode
 - [ ] Exact token counts per model tokenizer
-- [ ] Diff mode: what changed between two versions of a pack
+- [x] Diff mode: what changed between two versions of a pack (`skillprint diff OLD NEW`)
 - [ ] **Lift**: run a fixed task suite with and without a skill, per model, and report whether it actually helps
 - [ ] Public ratings page for the most-starred skills
 - [ ] Pull in Snyk / Socket / VirusTotal verdicts where they exist

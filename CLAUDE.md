@@ -28,9 +28,12 @@ so no syntax newer than 3.9 outside `from __future__ import annotations`.
   Wording here is shown to leadership: neutral, specific, never "risky" or "dangerous".
 - `skillprint/html.py`: the one-page `--html` report. Self-contained: no scripts, no network
   assets, everything escaped. Keep it that way so it can be emailed and opened offline.
+- `skillprint/diff.py`: `diff(old, new)` compares two `Report`s into a `Diff`
+  (added/removed skills, scripts, hooks, findings, domains; changed skill sizes).
 - `skillprint/cli.py`: output only. Text report, `--details`, `--json`, `--badge`,
-  `--fail-on`, git URL cloning. No detection logic belongs here.
+  `--fail-on`, git URL cloning, and the `diff` subcommand. No detection logic belongs here.
 - `tests/test_scan.py`: builds fake packs in `tmp_path` with the `write()` helper.
+  `tests/test_diff.py` reuses it to build two versions of a pack.
 
 ## Rules
 
@@ -56,7 +59,7 @@ so no syntax newer than 3.9 outside `from __future__ import annotations`.
 
 - [x] Footprint: context cost, hooks, capabilities, badge, CI mode
 - [ ] Exact token counts per model tokenizer
-- [ ] Diff mode: what changed between two versions of a pack
+- [x] Diff mode: what changed between two versions of a pack (`skillprint diff OLD NEW`)
 - [ ] **Lift**: run a fixed task suite with and without a skill, per model, and report whether it helps
 - [ ] Public ratings page for the most-starred skills
 - [ ] Pull in Snyk / Socket / VirusTotal verdicts where they exist
