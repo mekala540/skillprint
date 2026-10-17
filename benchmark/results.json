@@ -14,7 +14,12 @@
    "shell_exec": 4,
    "env_secrets": 3,
    "auto_install": 4
-  }
+  },
+  "descriptions_shipped_tokens": 716,
+  "claude_listing_tokens_200k": 716,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 716,
+  "names_only_1m": 0
  },
  {
   "repo": "affaan-m/ECC",
@@ -32,7 +37,12 @@
    "env_secrets": 96,
    "destructive": 48,
    "secrets_access": 1
-  }
+  },
+  "descriptions_shipped_tokens": 26543,
+  "claude_listing_tokens_200k": 2438,
+  "names_only_200k": 314,
+  "claude_listing_tokens_1m": 10000,
+  "names_only_1m": 216
  },
  {
   "repo": "mattpocock/skills",
@@ -47,7 +57,12 @@
   "findings": {
    "auto_install": 1,
    "destructive": 2
-  }
+  },
+  "descriptions_shipped_tokens": 1618,
+  "claude_listing_tokens_200k": 1618,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 1618,
+  "names_only_1m": 0
  },
  {
   "repo": "multica-ai/andrej-karpathy-skills",
@@ -59,7 +74,12 @@
   "hooks_main_config": 0,
   "hooks_every_action": 0,
   "scripts": 0,
-  "findings": {}
+  "findings": {},
+  "descriptions_shipped_tokens": 63,
+  "claude_listing_tokens_200k": 63,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 63,
+  "names_only_1m": 0
  },
  {
   "repo": "anthropics/skills",
@@ -76,7 +96,12 @@
    "destructive": 1,
    "shell_exec": 39,
    "env_secrets": 2
-  }
+  },
+  "descriptions_shipped_tokens": 2504,
+  "claude_listing_tokens_200k": 2000,
+  "names_only_200k": 5,
+  "claude_listing_tokens_1m": 2504,
+  "names_only_1m": 0
  },
  {
   "repo": "DietrichGebert/ponytail",
@@ -91,7 +116,12 @@
   "findings": {
    "shell_exec": 29,
    "env_secrets": 1
-  }
+  },
+  "descriptions_shipped_tokens": 440,
+  "claude_listing_tokens_200k": 440,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 440,
+  "names_only_1m": 0
  },
  {
   "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
@@ -107,7 +137,12 @@
    "shell_exec": 22,
    "env_secrets": 13,
    "auto_install": 17
-  }
+  },
+  "descriptions_shipped_tokens": 712,
+  "claude_listing_tokens_200k": 712,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 712,
+  "names_only_1m": 0
  },
  {
   "repo": "JuliusBrussee/caveman",
@@ -125,7 +160,12 @@
    "secrets_access": 2,
    "env_secrets": 31,
    "destructive": 1
-  }
+  },
+  "descriptions_shipped_tokens": 1149,
+  "claude_listing_tokens_200k": 1149,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 1149,
+  "names_only_1m": 0
  },
  {
   "repo": "addyosmani/agent-skills",
@@ -141,7 +181,12 @@
    "auto_install": 3,
    "destructive": 5,
    "shell_exec": 18
-  }
+  },
+  "descriptions_shipped_tokens": 2409,
+  "claude_listing_tokens_200k": 2000,
+  "names_only_200k": 5,
+  "claude_listing_tokens_1m": 2409,
+  "names_only_1m": 0
  },
  {
   "repo": "thedotmack/claude-mem",
@@ -160,7 +205,12 @@
    "destructive": 61,
    "secrets_access": 3,
    "pipe_to_shell": 14
-  }
+  },
+  "descriptions_shipped_tokens": 1920,
+  "claude_listing_tokens_200k": 1920,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 1920,
+  "names_only_1m": 0
  },
  {
   "repo": "Leonxlnx/taste-skill",
@@ -174,7 +224,12 @@
   "scripts": 6,
   "findings": {
    "auto_install": 10
-  }
+  },
+  "descriptions_shipped_tokens": 1238,
+  "claude_listing_tokens_200k": 1238,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 1238,
+  "names_only_1m": 0
  },
  {
   "repo": "ComposioHQ/awesome-claude-skills",
@@ -191,7 +246,12 @@
    "auto_install": 5,
    "env_secrets": 2,
    "destructive": 1
-  }
+  },
+  "descriptions_shipped_tokens": 31585,
+  "claude_listing_tokens_200k": 7229,
+  "names_only_200k": 864,
+  "claude_listing_tokens_1m": 10000,
+  "names_only_1m": 766
  },
  {
   "repo": "gsd-build/get-shit-done",
@@ -208,7 +268,12 @@
    "env_secrets": 15,
    "destructive": 1,
    "auto_install": 14
-  }
+  },
+  "descriptions_shipped_tokens": 0,
+  "claude_listing_tokens_200k": 0,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 0,
+  "names_only_1m": 0
  },
  {
   "repo": "mvanhorn/last30days-skill",
@@ -226,7 +291,12 @@
    "secrets_access": 9,
    "env_secrets": 3,
    "destructive": 2
-  }
+  },
+  "descriptions_shipped_tokens": 68,
+  "claude_listing_tokens_200k": 68,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 68,
+  "names_only_1m": 0
  },
  {
   "repo": "blader/humanizer",
@@ -238,7 +308,12 @@
   "hooks_main_config": 0,
   "hooks_every_action": 0,
   "scripts": 1,
-  "findings": {}
+  "findings": {},
+  "descriptions_shipped_tokens": 92,
+  "claude_listing_tokens_200k": 92,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 92,
+  "names_only_1m": 0
  },
  {
   "repo": "Imbad0202/academic-research-skills",
@@ -255,7 +330,12 @@
    "auto_install": 9,
    "env_secrets": 2,
    "destructive": 1
-  }
+  },
+  "descriptions_shipped_tokens": 1217,
+  "claude_listing_tokens_200k": 1217,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 1217,
+  "names_only_1m": 0
  },
  {
   "repo": "sickn33/agentic-awesome-skills",
@@ -275,7 +355,12 @@
    "secrets_access": 129,
    "pipe_to_shell": 36,
    "hidden_unicode": 6
-  }
+  },
+  "descriptions_shipped_tokens": 123309,
+  "claude_listing_tokens_200k": 20960,
+  "names_only_200k": 2676,
+  "claude_listing_tokens_1m": 20960,
+  "names_only_1m": 2676
  },
  {
   "repo": "cathrynlavery/diagram-design",
@@ -290,7 +375,12 @@
   "findings": {
    "shell_exec": 106,
    "auto_install": 6
-  }
+  },
+  "descriptions_shipped_tokens": 213,
+  "claude_listing_tokens_200k": 213,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 213,
+  "names_only_1m": 0
  },
  {
   "repo": "wshobson/agents",
@@ -307,7 +397,12 @@
    "auto_install": 31,
    "destructive": 9,
    "env_secrets": 4
-  }
+  },
+  "descriptions_shipped_tokens": 13477,
+  "claude_listing_tokens_200k": 2000,
+  "names_only_200k": 178,
+  "claude_listing_tokens_1m": 10000,
+  "names_only_1m": 54
  },
  {
   "repo": "Yeachan-Heo/oh-my-claudecode",
@@ -324,7 +419,12 @@
    "auto_install": 51,
    "shell_exec": 427,
    "env_secrets": 40
-  }
+  },
+  "descriptions_shipped_tokens": 2248,
+  "claude_listing_tokens_200k": 2000,
+  "names_only_200k": 7,
+  "claude_listing_tokens_1m": 2248,
+  "names_only_1m": 0
  },
  {
   "repo": "anthropics/claude-plugins-official",
@@ -341,7 +441,12 @@
    "env_secrets": 9,
    "auto_install": 10,
    "destructive": 8
-  }
+  },
+  "descriptions_shipped_tokens": 2980,
+  "claude_listing_tokens_200k": 2000,
+  "names_only_200k": 11,
+  "claude_listing_tokens_1m": 2980,
+  "names_only_1m": 0
  },
  {
   "repo": "K-Dense-AI/scientific-agent-skills",
@@ -357,7 +462,12 @@
    "env_secrets": 37,
    "auto_install": 266,
    "shell_exec": 63
-  }
+  },
+  "descriptions_shipped_tokens": 18401,
+  "claude_listing_tokens_200k": 2000,
+  "names_only_200k": 169,
+  "claude_listing_tokens_1m": 10000,
+  "names_only_1m": 87
  },
  {
   "repo": "OthmanAdi/planning-with-files",
@@ -373,7 +483,12 @@
    "shell_exec": 103,
    "destructive": 19,
    "auto_install": 1
-  }
+  },
+  "descriptions_shipped_tokens": 900,
+  "claude_listing_tokens_200k": 900,
+  "names_only_200k": 0,
+  "claude_listing_tokens_1m": 900,
+  "names_only_1m": 0
  },
  {
   "repo": "phuryn/pm-skills",
@@ -385,7 +500,12 @@
   "hooks_main_config": 0,
   "hooks_every_action": 0,
   "scripts": 1,
-  "findings": {}
+  "findings": {},
+  "descriptions_shipped_tokens": 5090,
+  "claude_listing_tokens_200k": 2000,
+  "names_only_200k": 47,
+  "claude_listing_tokens_1m": 5090,
+  "names_only_1m": 0
  },
  {
   "repo": "alirezarezvani/claude-skills",
@@ -403,6 +523,11 @@
    "env_secrets": 26,
    "destructive": 22,
    "secrets_access": 2
-  }
+  },
+  "descriptions_shipped_tokens": 50978,
+  "claude_listing_tokens_200k": 3274,
+  "names_only_200k": 446,
+  "claude_listing_tokens_1m": 10000,
+  "names_only_1m": 384
  }
 ]

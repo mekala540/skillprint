@@ -58,12 +58,19 @@ def est_tokens(text: str) -> int:
     return (len(text) + 3) // 4
 
 
+DESC_CAP_CHARS = 1536  # Claude Code truncates description + when_to_use at this length in its listing
+
+
 @dataclass
 class Skill:
     name: str
     path: str
-    description_tokens: int
+    description_tokens: int          # name + description as shipped (kept for older JSON readers)
     body_tokens: int
+    name_tokens: int = 0
+    listing_desc_tokens: int = 0     # description after Claude Code's per-skill cap
+    loaded: bool = True              # False: sits where Claude Code never looks
+    source: str = ""                 # top-level folder or plugin it came from
 
 
 @dataclass
@@ -93,15 +100,26 @@ class Report:
     doc_mentions: dict[str, int] = field(default_factory=dict)
     test_files: int = 0
     network_domains: dict[str, int] = field(default_factory=dict)
+    layout: str = "pack"             # "pack" (a repo), "claude-home" (~/.claude) or "claude-skills" (a skills dir)
+    # Things inside folders Claude Code never loads: on disk, but never run by the agent.
+    inactive_scripts: list[str] = field(default_factory=list)
+    inactive_hooks: list[Hook] = field(default_factory=list)
+    inactive_findings: list[Finding] = field(default_factory=list)
+    domain_files: dict[str, set] = field(default_factory=dict, repr=False)  # domain -> files that mention it
 
     # ---- derived numbers -------------------------------------------------
     @property
+    def loaded_skills(self) -> list[Skill]:
+        return [s for s in self.skills if s.loaded]
+
+    @property
     def upfront_tokens(self) -> int:
-        return sum(s.description_tokens for s in self.skills)
+        """Description text the skills ship, before any agent-side budget."""
+        return sum(s.description_tokens for s in self.loaded_skills)
 
     @property
     def on_use_tokens(self) -> int:
-        return sum(s.body_tokens for s in self.skills)
+        return sum(s.body_tokens for s in self.loaded_skills)
 
     @property
     def hooks_every_action(self) -> int:
@@ -140,6 +158,8 @@ class Report:
             "files": self.files,
             "skills_unique": len(self.skills),
             "skill_files": self.skill_files,
+            "layout": self.layout,
+            "skills_loaded": len(self.loaded_skills),
             "upfront_tokens": self.upfront_tokens,
             "on_use_tokens": self.on_use_tokens,
             "scripts": len(self.scripts),
@@ -148,6 +168,9 @@ class Report:
             "hook_events": sorted({h.event for h in self.hooks}),
             "hooks_by_config": {k: len(v) for k, v in self.hooks_by_config().items()},
             "test_files_skipped": self.test_files,
+            "never_loaded": {"skills": len(self.skills) - len(self.loaded_skills),
+                             "scripts": len(self.inactive_scripts), "hooks": len(self.inactive_hooks),
+                             "findings": len(self.inactive_findings)},
             "findings": self.finding_counts(),
             "doc_mentions_ignored": self.doc_mentions,
             "network_domains": dict(sorted(self.network_domains.items(), key=lambda kv: -kv[1])),
@@ -202,6 +225,46 @@ CLAUDE_HOME_SKIP = {
     "plugins", "projects", "file-history", "sessions", "session-env", "shell-snapshots", "backups",
     "downloads", "cache", "todos", "statsig", "ide", "debug", "telemetry", "paste-cache", "logs",
 }
+
+
+def _layout(root: Path) -> str:
+    if is_claude_home(root):
+        return "claude-home"
+    if root.name == "skills" and root.parent.name == ".claude":
+        return "claude-skills"
+    return "pack"
+
+
+def _loaded(path: Path, root: Path, layout: str, plugin_roots: list[Path]) -> bool:
+    """Claude Code loads <skills dir>/<skill-name>/SKILL.md, one level deep (plus skills synced
+    from claude.ai under skills/synced/). A SKILL.md deeper than that, such as inside a whole
+    repo copied into the folder, is never loaded. Outside Claude Code layouts, every skill counts."""
+    if layout == "pack":
+        return True
+    skill_dir_parent = path.parent.parent
+    skills_dirs = {root / "skills", root / "skills" / "synced"} if layout == "claude-home" \
+        else {root, root / "synced"}
+    if skill_dir_parent in skills_dirs:
+        return True
+    return any(skill_dir_parent == p / "skills" for p in plugin_roots)
+
+
+def _source(path: Path, root: Path, plugin_roots: list[Path]) -> str:
+    """Where a skill came from: the plugin it belongs to, or its top-level folder."""
+    for p in plugin_roots:
+        if p in path.parents:
+            return "plugin: " + p.parent.name if p.name[:1].isdigit() else "plugin: " + p.name
+    try:
+        parts = path.relative_to(root).parts
+    except ValueError:
+        return "other"
+    if parts and parts[0] == "skills" and len(parts) > 2 and (root / "skills").is_dir() and is_claude_home(root):
+        parts = parts[1:]
+    if parts and parts[0] == "synced" and len(parts) > 2:
+        return "synced from claude.ai"
+    if len(parts) == 2 and parts[1] == "SKILL.md" and _layout(root) != "pack":
+        return "your personal skills"
+    return parts[0] if len(parts) > 1 else "(root)"
 
 
 def _pack_files(root: Path):
@@ -347,14 +410,18 @@ def _scan_text(rel: str, text: str, report: Report, as_findings: bool, shell: bo
             if PLACEHOLDER_DOMAIN.search(d):
                 continue
             report.network_domains[d] = report.network_domains.get(d, 0) + 1
+            report.domain_files.setdefault(d, set()).add(rel)
 
 
 # ---- main entry ----------------------------------------------------------
 
 def scan(root: str | os.PathLike) -> Report:
     root = Path(root).resolve()
-    report = Report(root=str(root))
+    layout = _layout(root)
+    plugin_roots = _installed_plugins(root) if layout == "claude-home" else []
+    report = Report(root=str(root), layout=layout)
     seen_skills: dict[str, Skill] = {}
+    loaded_dirs: set[str] = set()
 
     for path in _pack_files(root):
         rel = os.path.relpath(path, root)
@@ -370,7 +437,13 @@ def scan(root: str | os.PathLike) -> Report:
             desc = fm.get("description", "")
             body = FRONTMATTER_RE.sub("", text, count=1)
             key = name.strip().lower()
-            cand = Skill(name, rel, est_tokens(f"{name}: {desc}"), est_tokens(body))
+            when = fm.get("when_to_use", "")
+            listing = (desc + (" " + when if when else ""))[:DESC_CAP_CHARS]
+            cand = Skill(name, rel, est_tokens(f"{name}: {desc}"), est_tokens(body),
+                         name_tokens=est_tokens(name), listing_desc_tokens=est_tokens(listing),
+                         loaded=_loaded(path, root, layout, plugin_roots), source=_source(path, root, plugin_roots))
+            if cand.loaded:
+                loaded_dirs.add(os.path.normpath(str(path.parent)))
             prev = seen_skills.get(key)  # copies for other tools or languages count once
             if prev is None or _rank(cand.path) < _rank(prev.path):
                 seen_skills[key] = cand
@@ -407,4 +480,28 @@ def scan(root: str | os.PathLike) -> Report:
             _scan_text(rel, text, report, as_findings=False)  # docs: counted, not flagged
 
     report.skills = sorted(seen_skills.values(), key=lambda s: s.path)
+    if layout != "pack":
+        _set_aside_inactive(report, root, loaded_dirs)
     return report
+
+
+def _set_aside_inactive(report: Report, root: Path, loaded_dirs: set[str]) -> None:
+    """Inside the skills folder, only files belonging to a loaded skill can ever run. A repo copied
+    in wholesale brings scripts, hooks and flagged code that the agent never sees."""
+    skills_dir = os.path.normpath(str(root / "skills" if report.layout == "claude-home" else root))
+
+    def active(rel: str) -> bool:
+        ap = os.path.normpath(os.path.join(str(root), rel))
+        if not (ap == skills_dir or ap.startswith(skills_dir + os.sep)):
+            return True
+        return any(ap.startswith(d + os.sep) for d in loaded_dirs)
+
+    report.inactive_scripts = [p for p in report.scripts if not active(p)]
+    report.scripts = [p for p in report.scripts if active(p)]
+    report.inactive_hooks = [h for h in report.hooks if not active(h.source)]
+    report.hooks = [h for h in report.hooks if active(h.source)]
+    report.inactive_findings = [f for f in report.findings if not active(f.path)]
+    report.findings = [f for f in report.findings if active(f.path)]
+    for d, files in list(report.domain_files.items()):
+        if not any(active(p) for p in files):
+            report.network_domains.pop(d, None)

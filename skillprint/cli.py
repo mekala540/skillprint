@@ -14,6 +14,8 @@ from . import __version__
 from pathlib import Path
 
 from .scan import scan, is_claude_home, Report, HOOK_EVENTS_EVERY_ACTION
+from .insights import analyse, redactor, Insights
+from . import html as html_report
 
 LABELS = {
     "shell_exec": "runs shell commands",
@@ -64,14 +66,27 @@ def badge(r: Report) -> str:
     return f"[![skillprint]({url})](https://github.com/mekala540/skillprint)"
 
 
-def text_report(r: Report, details: bool) -> str:
+def text_report(r: Report, details: bool, ins: Insights | None = None, hide=lambda t: t) -> str:
+    ins = ins or analyse(r)
+    lst = ins.listing
     out = []
-    out.append(f"skillprint {__version__} · {r.root}")
+    out.append(f"skillprint {__version__} · {hide(_tilde(r.root))}")
+    out.append("")
+    out.append("  " + ins.headline)
     out.append("")
     out.append(f"  Footprint            {r.footprint.upper()}")
-    copies = f" ({_fmt(r.skill_files)} SKILL.md files incl. copies)" if r.skill_files != len(r.skills) else ""
-    out.append(f"  Skills               {_fmt(len(r.skills))}{copies}")
-    out.append(f"  Loaded up front      ≈{_fmt(r.upfront_tokens)} tokens (names + descriptions, every session)")
+    if r.layout != "pack":
+        extra = f"  (+{_fmt(ins.not_loaded)} SKILL.md files Claude Code never loads)" if ins.not_loaded else ""
+        out.append(f"  Agent can use        {_fmt(lst.skills)} skills{extra}")
+    else:
+        copies = f" ({_fmt(r.skill_files)} SKILL.md files incl. copies)" if r.skill_files != len(r.skills) else ""
+        out.append(f"  Skills               {_fmt(len(r.skills))}{copies}")
+    shown = f"{_fmt(lst.described)} with descriptions, {_fmt(lst.names_only)} names only" if lst.names_only \
+        else "all with descriptions"
+    out.append(f"  Skill listing        ≈{_fmt(lst.tokens)} tokens every turn in Claude Code ({shown};"
+               f" budget ≈{_fmt(lst.budget)} for a {lst.context_window // 1000}k-token model)")
+    if lst.full_tokens > lst.tokens:
+        out.append(f"                       descriptions shipped: ≈{_fmt(lst.full_tokens)} tokens, most cut by the budget")
     out.append(f"  Loaded when used     ≈{_fmt(r.on_use_tokens)} tokens (all skill bodies)")
     out.append(f"  Scripts              {_fmt(len(r.scripts))}")
     groups = r.hooks_by_config()
@@ -93,25 +108,33 @@ def text_report(r: Report, details: bool) -> str:
         out.append(f"    {v:>5}  {LABELS.get(k, k)}")
     if r.network_domains:
         top = ", ".join(list(dict(sorted(r.network_domains.items(), key=lambda kv: -kv[1])))[:6])
-        out.append(f"    domains: {top}")
+        out.append(f"    domains: {hide(top)}")
     ignored = sum(r.doc_mentions.values())
     if ignored:
         out.append(f"  ({_fmt(ignored)} pattern matches in docs and prose ignored: they describe, they don't run)")
     if r.test_files:
-        out.append(f"  ({_fmt(r.test_files)} test files skipped: they don't ship to the agent)")
+        out.append(f"  ({_fmt(r.test_files)} test file{'s' if r.test_files != 1 else ''} skipped: they don't ship to the agent)")
+    if r.inactive_scripts or r.inactive_findings or r.inactive_hooks:
+        out.append(f"  ({_fmt(len(r.inactive_scripts))} scripts, {_fmt(len(r.inactive_hooks))} hooks and "
+                   f"{_fmt(len(r.inactive_findings))} flagged lines sit in folders the agent never loads: not counted above)")
     if details:
         out.append("")
         out.append("  Hooks:")
         for h in r.hooks:
-            out.append(f"    {h.event:<20} {h.command[:90]}   ({h.source})")
+            out.append(f"    {h.event:<20} {hide(h.command[:90])}   ({hide(h.source)})")
         out.append("  Findings:")
         for f in r.findings:
-            out.append(f"    {f.kind:<15} {f.path}:{f.line}  {f.excerpt}")
+            out.append(f"    {f.kind:<15} {hide(f.path)}:{f.line}  {hide(f.excerpt)}")
         out.append("  Largest skills (tokens up front / when used):")
         for s in sorted(r.skills, key=lambda s: -s.body_tokens)[:10]:
             out.append(f"    {s.description_tokens:>5} / {s.body_tokens:>6}  {s.name}")
     out.append("")
+    out.append("  Recommended actions:")
+    for i, a in enumerate(ins.actions, 1):
+        out.append(f"    {i}. {hide(a)}")
+    out.append("")
     out.append("  Counts describe capability, not intent. Token figures are estimates (chars / 4).")
+    out.append("  For a shareable one-page report: --html report.html")
     return "\n".join(out)
 
 
@@ -122,6 +145,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--badge", action="store_true", help="print a README badge")
     p.add_argument("--details", action="store_true", help="list every hook, finding and the largest skills")
     p.add_argument("--fail-on", choices=["moderate", "heavy", "medium", "high"], help="exit 1 if footprint is at least this (for CI)")
+    p.add_argument("--html", metavar="FILE", help="write a one-page report to FILE (no network, safe to email)")
+    p.add_argument("--internal-domain", action="append", default=[], metavar="DOMAIN",
+                   help="your company's domain, e.g. example.com (repeatable); other domains are flagged as external")
+    p.add_argument("--redact", action="store_true",
+                   help="hide internal domains, your home folder and user name in the output")
+    p.add_argument("--context-window", type=int, default=200_000, metavar="TOKENS",
+                   help="model context window for the Claude Code listing budget (default 200000; 1000000 for 1M models)")
     p.add_argument("--version", action="version", version=__version__)
     a = p.parse_args(argv)
 
@@ -153,12 +183,22 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print("skillprint: no SKILL.md files or hooks found here. Is this an agent skill pack?",
                       file=sys.stderr)
+        ins = analyse(r, a.context_window, a.internal_domain)
+        hide = redactor(a.internal_domain, r.root) if a.redact else (lambda t: t)
         if a.json:
-            print(json.dumps(r.to_dict(), indent=2))
+            d = r.to_dict()
+            d["listing"] = ins.listing.__dict__
+            d["headline"], d["actions"] = ins.headline, ins.actions
+            d["external_domains"] = ins.external_domains
+            text = json.dumps(d, indent=2)
+            print(hide(text) if a.redact else text)
         elif a.badge:
             print(badge(r))
         else:
-            print(text_report(r, a.details))
+            print(text_report(r, a.details, ins, hide))
+        if a.html:
+            Path(a.html).write_text(html_report.render(r, ins, __version__, hide, _tilde(r.root)), encoding="utf-8")
+            print(f"\nReport written to {os.path.abspath(a.html)}", file=sys.stderr)
         fail_on = OLD_NAMES.get(a.fail_on, a.fail_on)
         if fail_on and ORDER.index(r.footprint) >= ORDER.index(fail_on):
             return 1

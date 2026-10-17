@@ -23,6 +23,11 @@ so no syntax newer than 3.9 outside `from __future__ import annotations`.
   `HIDDEN_UNICODE`, `TEST_PATH`, `PLACEHOLDER_DOMAIN`, hook event sets, the
   `Skill`/`Hook`/`Finding`/`Report` dataclasses, footprint logic (`Report.footprint`),
   and `scan(root)`, the single entry point.
+- `skillprint/insights.py`: turns a scan into conclusions. Claude Code listing-budget model
+  (`listing`), sources, "review first" priorities, plain-language recommended actions, redaction.
+  Wording here is shown to leadership: neutral, specific, never "risky" or "dangerous".
+- `skillprint/html.py`: the one-page `--html` report. Self-contained: no scripts, no network
+  assets, everything escaped. Keep it that way so it can be emailed and opened offline.
 - `skillprint/cli.py`: output only. Text report, `--details`, `--json`, `--badge`,
   `--fail-on`, git URL cloning. No detection logic belongs here.
 - `tests/test_scan.py`: builds fake packs in `tmp_path` with the `write()` helper.
@@ -39,6 +44,12 @@ so no syntax newer than 3.9 outside `from __future__ import annotations`.
   that says "never `curl | bash`" is not a finding. Don't weaken this when adding rules.
 - Duplicate skills (per-tool folders, translations) count once, and the canonical copy wins.
 - Token estimates are characters ÷ 4 (`est_tokens`).
+- In Claude Code layouts (`~/.claude`, a `.claude/skills` folder) only `<skills dir>/<name>/SKILL.md`
+  loads; anything deeper is "never loaded" and its scripts, hooks and findings are set aside
+  (`_set_aside_inactive`). A scanned repo (`layout == "pack"`) counts every skill as installed.
+- The listing model follows the Claude Code docs: names always listed, descriptions dropped past
+  ~1% of the context window, 1,536-char cap per description. If those docs change, update
+  `insights.py`, README "How it decides" and the HTML footer together.
 - Keep README's "How it decides" section in sync with any behavior change.
 
 ## Roadmap (from README)

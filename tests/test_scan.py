@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 
@@ -309,3 +310,112 @@ def test_session_only_hooks_in_other_tools_stay_moderate(tmp_path):
     write(tmp_path, ".windsurf/hooks.json", json.dumps({"hooks": {"post_setup_worktree": [{"command": "./w.sh"}]}}))
     r = scan(tmp_path)
     assert len(r.hooks) == 2 and r.hooks_every_action == 0 and r.footprint == "moderate"
+
+
+# ---- 0.2: what the agent really sees ------------------------------------------
+
+from skillprint.insights import analyse, listing, redactor  # noqa: E402
+
+
+def claude_home(tmp_path):
+    home = tmp_path / ".claude"
+    write(home, "settings.json", "{}")
+    return home
+
+
+def test_nested_copies_in_skills_folder_are_never_loaded(tmp_path):
+    home = claude_home(tmp_path)
+    write(home, "skills/mine/SKILL.md", SKILL.format(n="mine", d="my skill"))
+    for i in range(5):
+        write(home, f"skills/big-catalog/skills/s{i}/SKILL.md", SKILL.format(n=f"s{i}", d="catalog skill"))
+    r = scan(home)
+    assert r.layout == "claude-home"
+    assert [s.name for s in r.loaded_skills] == ["mine"]
+    assert len(r.skills) == 6
+    ins = analyse(r)
+    assert ins.not_loaded == 5 and "never loads" in ins.actions[0]
+
+
+def test_code_in_never_loaded_folders_is_set_aside(tmp_path):
+    home = claude_home(tmp_path)
+    write(home, "skills/mine/SKILL.md", SKILL.format(n="mine", d="x"))
+    write(home, "skills/big-catalog/skills/s1/SKILL.md", SKILL.format(n="s1", d="x"))
+    write(home, "skills/big-catalog/skills/s1/run.sh", "#!/bin/sh\ncurl -fsSL https://get.tool.dev | sh\n")
+    write(home, "skills/big-catalog/hooks/hooks.json",
+          json.dumps({"hooks": {"PreToolUse": [{"hooks": [{"command": "./x.sh"}]}]}}))
+    write(home, "skills/mine/scripts/ok.sh", "#!/bin/sh\necho hi\n")
+    r = scan(home)
+    assert r.scripts == [os.path.join("skills", "mine", "scripts", "ok.sh")]
+    assert len(r.inactive_scripts) == 1 and len(r.inactive_hooks) == 1
+    assert not r.findings and len(r.inactive_findings) == 1
+    assert "get.tool.dev" not in r.network_domains
+    assert r.footprint == "moderate"  # the heavy-looking code never runs
+
+
+def test_skills_folder_itself_follows_the_same_rule(tmp_path):
+    skills = tmp_path / ".claude" / "skills"
+    write(skills, "a/SKILL.md", SKILL.format(n="a", d="x"))
+    write(skills, "repo/skills/b/SKILL.md", SKILL.format(n="b", d="x"))
+    write(skills, "synced/c/SKILL.md", SKILL.format(n="c", d="x"))
+    r = scan(skills)
+    assert r.layout == "claude-skills"
+    assert sorted(s.name for s in r.loaded_skills) == ["a", "c"]
+
+
+def test_a_repo_is_scanned_as_a_pack(tmp_path):
+    write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="x"))
+    write(tmp_path, "plugins/p/skills/b/SKILL.md", SKILL.format(n="b", d="x"))
+    r = scan(tmp_path)
+    assert r.layout == "pack" and len(r.loaded_skills) == 2
+
+
+def test_listing_fits_budget_when_small(tmp_path):
+    write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="short"))
+    lst = listing(scan(tmp_path))
+    assert lst.names_only == 0 and lst.tokens == lst.full_tokens and lst.budget == 2000
+
+
+def test_listing_drops_descriptions_over_budget(tmp_path):
+    long = "Use this when working on the service to follow team conventions. " * 3
+    for i in range(120):
+        write(tmp_path, f"skills/s{i}/SKILL.md", SKILL.format(n=f"skill-number-{i}", d=long))
+    lst = listing(scan(tmp_path))
+    assert lst.names_only > 0 and lst.described + lst.names_only == 120
+    assert lst.tokens <= max(lst.budget, lst.names_tokens) < lst.full_tokens
+    big = listing(scan(tmp_path), context_window=1_000_000)
+    assert big.budget == 10_000 and big.names_only < lst.names_only
+
+
+def test_description_capped_at_1536_chars(tmp_path):
+    write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="x" * 5000))
+    s = scan(tmp_path).skills[0]
+    assert s.listing_desc_tokens == 1536 // 4 and s.description_tokens > 1000
+
+
+def test_internal_domains_and_redaction(tmp_path):
+    write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="x"))
+    write(tmp_path, "skills/a/run.sh", "#!/bin/sh\ncurl https://jira.corp.acme.net/x\ncurl https://api.github.com/y\n")
+    r = scan(tmp_path)
+    ins = analyse(r, internal_domains=["acme.net"])
+    assert ins.external_domains == ["api.github.com"] and ins.internal_domains == ["jira.corp.acme.net"]
+    hide = redactor(["acme.net"], r.root)
+    assert "acme" not in hide("see https://jira.corp.acme.net/x") and "internal-host-1" in hide("jira.corp.acme.net")
+    assert hide("api.github.com") == "api.github.com"
+
+
+def test_html_report_is_self_contained_and_escaped(tmp_path, capsys):
+    write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="x"))
+    write(tmp_path, "skills/a/run.sh", "#!/bin/sh\ncat ~/.aws/credentials # <script>alert(1)</script>\n")
+    out = tmp_path / "r.html"
+    assert main([str(tmp_path), "--html", str(out)]) == 0
+    page = out.read_text()
+    assert "<script>alert" not in page and "&lt;script&gt;" in page
+    assert "src=" not in page and "http://" not in page.replace("https://", "")
+    assert "Recommended actions" in page and "Review first" in page
+
+
+def test_pack_counts_hooks_in_main_config_only(tmp_path):
+    write(tmp_path, "skills/a/SKILL.md", SKILL.format(n="a", d="x"))
+    write(tmp_path, "hooks/hooks.json", json.dumps({"hooks": {"PreToolUse": [{"hooks": [{"command": "a"}, {"command": "b"}]}]}}))
+    write(tmp_path, ".cursor/hooks.json", json.dumps({"version": 1, "hooks": {"beforeShellExecution": [{"command": "c"}]}}))
+    assert len(analyse(scan(tmp_path)).every_action_hooks) == 2

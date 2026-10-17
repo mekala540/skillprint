@@ -35,21 +35,23 @@ skillprint ./my-skills --details                    # every hook, finding, and t
 skillprint ./my-skills --json                       # machine-readable
 skillprint ./my-skills --badge                      # README badge markdown
 skillprint ./my-skills --fail-on heavy              # exit 1 in CI if footprint is heavy
+skillprint ~/.claude --html report.html             # one-page report to share (no network, safe to email)
+skillprint ~/.claude --html r.html --internal-domain yourcompany.com --redact   # flag outside domains, hide internal names
 ```
 
 ## What the most-starred packs look like
 
 We scanned 24 of the most-starred skill repos on 12 October 2026. **Full results: [BENCHMARK.md](BENCHMARK.md).**
 
-| Pack | Stars | Footprint | Tokens up front | Auto-run hooks (on every prompt or tool call) |
-| --- | --- | --- | --- | --- |
-| [obra/superpowers](https://github.com/obra/superpowers) | 285k | moderate | ≈670 | 1 (0) |
-| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 268k | heavy | ≈25,600 | 27 (15) |
-| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | moderate | ≈1,500 | 0 |
-| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | light | ≈60 | 0 |
-| [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 39k | heavy | ≈2,100 | 30 (9) |
+| Pack | Stars | Footprint | Skills | Names only in Claude Code (200k model) | Auto-run hooks (on every prompt or tool call) |
+| --- | --- | --- | --- | --- | --- |
+| [obra/superpowers](https://github.com/obra/superpowers) | 285k | moderate | 15 | 0 | 1 (0) |
+| [affaan-m/ECC](https://github.com/affaan-m/ECC) | 268k | heavy | 314 | all 314 | 27 (15) |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | 260k | moderate | 38 | 0 | 0 |
+| [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) | 212k | light | 1 | 0 | 0 |
+| [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 39k | heavy | 48 | 7 | 30 (9) |
 
-Up-front context cost varies 400×, and 7 of 18 packs run code on every prompt or tool call. None showed signs of malice; that's exactly what a star count hides.
+Claude Code gives the whole skill list a small budget (about 1% of the context window). One large pack can use it all, so every skill, including your own, shows as a bare name and is rarely picked. And 7 of 18 packs run code on every prompt or tool call. None showed signs of malice; that's exactly what a star count hides.
 
 ## How it decides
 
@@ -61,6 +63,9 @@ Up-front context cost varies 400×, and 7 of 18 packs run code on every prompt o
 - **Download piped into a shell** counts only in shell contexts: shell scripts, hook commands and `SKILL.md` code blocks. In Python or JavaScript, `curl … | bash` is almost always an install hint in an error message.
 - **Hidden Unicode** (zero-width and bidi-control characters) is checked across the whole `SKILL.md`, because the agent reads every word, plus shell scripts and hook commands. Joiners between two non-Latin characters (emoji, Persian, Arabic, Indic scripts) are normal writing and are not flagged.
 - Counts describe **capability, not intent**. A `rm -rf "$TMP_DIR"` in a cleanup script is normal. Read the `--details` output before judging.
+- **What the agent really sees.** Claude Code loads skills from `<skills folder>/<skill-name>/SKILL.md`, one level deep. A `SKILL.md` deeper than that, such as inside a whole repo copied into `~/.claude/skills`, is never loaded, so it's reported separately; its scripts, hooks and flagged lines are set aside too, because they never run. Scanning a GitHub repo treats every skill in it as installed.
+- **The skill listing.** Claude Code lists every skill's name each turn and drops descriptions once the listing passes about 1% of the model's context window (≈2,000 tokens for a 200k model; use `--context-window 1000000` for 1M models). Each description is capped at 1,536 characters. Which skills keep their description depends on usage, which isn't visible on disk, so the split is an estimate.
+- **Review first** = reads credential files, pipes a download into a shell, hidden Unicode. These are the few lines worth a human look; running shell commands is normal for tools and is shown as context only.
 
 ## Use it in CI
 
