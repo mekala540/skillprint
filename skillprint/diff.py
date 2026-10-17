@@ -111,7 +111,9 @@ def diff(old: Report, new: Report) -> Diff:
     d.skills_removed = [olds[k] for k in sorted(olds.keys() - news.keys())]
     for k in sorted(olds.keys() & news.keys()):
         a, b = olds[k], news[k]
-        if (a.description_tokens, a.body_tokens) != (b.description_tokens, b.body_tokens):
+        # The digest catches edits that keep the size; packs scanned before it existed fall back to size.
+        if (a.description_tokens, a.body_tokens) != (b.description_tokens, b.body_tokens) or (
+                a.digest and b.digest and a.digest != b.digest):
             d.skills_changed.append(SkillChange(b.name, a, b))
 
     d.scripts_added = sorted(set(new.scripts) - set(old.scripts))

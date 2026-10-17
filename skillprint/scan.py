@@ -1,6 +1,7 @@
 """Core scanner: walks a skill pack and measures what it loads and what it runs."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -71,6 +72,7 @@ class Skill:
     listing_desc_tokens: int = 0     # description after Claude Code's per-skill cap
     loaded: bool = True              # False: sits where Claude Code never looks
     source: str = ""                 # top-level folder or plugin it came from
+    digest: str = ""                 # hash of SKILL.md, so diff mode sees edits that keep the size
 
 
 @dataclass
@@ -441,7 +443,8 @@ def scan(root: str | os.PathLike) -> Report:
             listing = (desc + (" " + when if when else ""))[:DESC_CAP_CHARS]
             cand = Skill(name, rel, est_tokens(f"{name}: {desc}"), est_tokens(body),
                          name_tokens=est_tokens(name), listing_desc_tokens=est_tokens(listing),
-                         loaded=_loaded(path, root, layout, plugin_roots), source=_source(path, root, plugin_roots))
+                         loaded=_loaded(path, root, layout, plugin_roots), source=_source(path, root, plugin_roots),
+                         digest=hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()[:16])
             if cand.loaded:
                 loaded_dirs.add(os.path.normpath(str(path.parent)))
             prev = seen_skills.get(key)  # copies for other tools or languages count once

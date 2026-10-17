@@ -85,3 +85,19 @@ def test_folder_named_diff_still_scans(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     assert main(["diff", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["skills_unique"] == 1
+
+
+def test_same_size_edit_is_a_changed_skill(tmp_path):
+    # "Run the tests" -> "Run the pipes": same length, different instruction.
+    write(tmp_path, "v1/skills/a/SKILL.md", "---\nname: a\ndescription: x\n---\nRun the tests.\n")
+    write(tmp_path, "v2/skills/a/SKILL.md", "---\nname: a\ndescription: x\n---\nRun the pipes.\n")
+    d = diff(scan(tmp_path / "v1"), scan(tmp_path / "v2"))
+    assert [c.name for c in d.skills_changed] == ["a"] and d.changed
+
+
+def test_diff_help_shows_diff_options(capsys):
+    try:
+        main(["diff", "--help"])
+    except SystemExit:
+        pass
+    assert "skillprint diff" in capsys.readouterr().out

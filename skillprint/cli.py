@@ -239,7 +239,8 @@ def diff_main(argv: list[str]) -> int:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     # "skillprint diff OLD NEW". A pack folder that happens to be called "diff" still scans alone.
-    if argv[:1] == ["diff"] and len([x for x in argv[1:] if not x.startswith("-")]) >= 2:
+    if argv[:1] == ["diff"] and (len([x for x in argv[1:] if not x.startswith("-")]) >= 2
+                                 or "-h" in argv[1:] or "--help" in argv[1:]):
         return diff_main(argv[1:])
     p = argparse.ArgumentParser(prog="skillprint", description="Measure what an agent skill pack loads and runs.",
                                 epilog="To compare two versions of a pack: skillprint diff OLD NEW")
