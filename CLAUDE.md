@@ -5,6 +5,11 @@ context tokens (up front and on use), auto-run hooks, scripts, and risky command
 rolled up into a `light` / `moderate` / `heavy` footprint (size, not danger; never call a pack risky or dangerous). It describes capability, not
 intent. It is not a malware scanner.
 
+**Project context lives in the sibling repo:** read `docs/CONTEXT.md` in
+github.com/mekala540/skilllab (locally `~/Documents/skilllab/docs/CONTEXT.md`) for the mission,
+the fixed rules (neutrality, credit to mekala540 with no co-author lines, privacy), current
+state and next steps.
+
 ## Setup and tests
 
 ```bash
